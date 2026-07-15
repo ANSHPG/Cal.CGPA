@@ -1,10 +1,6 @@
 @import "tailwindcss";
 
-:root {
-  --background: #201e1b;
-  --foreground: #e6e2d3;
-
-  /* Claude-inspired palette */
+@theme {
   --color-primary: #d97757;
   --color-primary-active: #c26547;
   --color-primary-disabled: #4a453f;
@@ -26,30 +22,6 @@
   --color-on-primary: #201e1b;
   --color-on-dark: #e6e2d3;
   --color-on-dark-soft: #8c877a;
-}
-
-@theme {
-  --color-primary: var(--color-primary);
-  --color-primary-active: var(--color-primary-active);
-  --color-primary-disabled: var(--color-primary-disabled);
-  
-  --color-ink: var(--color-ink);
-  --color-body: var(--color-body);
-  --color-muted: var(--color-muted);
-  --color-muted-soft: var(--color-muted-soft);
-  
-  --color-hairline: var(--color-hairline);
-  --color-hairline-soft: var(--color-hairline-soft);
-  
-  --color-canvas: var(--color-canvas);
-  --color-surface-soft: var(--color-surface-soft);
-  --color-surface-card: var(--color-surface-card);
-  --color-surface-strong: var(--color-surface-strong);
-  --color-surface-dark: var(--color-surface-dark);
-  
-  --color-on-primary: var(--color-on-primary);
-  --color-on-dark: var(--color-on-dark);
-  --color-on-dark-soft: var(--color-on-dark-soft);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-newsreader), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;

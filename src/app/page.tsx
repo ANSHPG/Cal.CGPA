@@ -170,19 +170,19 @@ export default function Home() {
   const gradeOptions = Object.keys(currentScale);
 
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-body)] font-sans">
-      <header className="h-16 border-b border-[var(--color-hairline)] flex items-center px-6 md:px-12 sticky top-0 z-10 bg-[var(--color-canvas)]/80 backdrop-blur-md">
-        <div className="font-medium text-xl text-[var(--color-ink)] title-display italic">
+    <div className="min-h-screen bg-canvas text-body font-sans">
+      <header className="h-16 border-b border-hairline flex items-center px-6 md:px-12 sticky top-0 z-10 bg-canvas/80 backdrop-blur-md">
+        <div className="font-medium text-xl text-ink title-display italic">
           Cal.CGPA
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto py-12 px-4 sm:px-6">
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl text-[var(--color-ink)] mb-4 title-display">
+          <h1 className="text-4xl md:text-5xl text-ink mb-4 title-display">
             Calculate your Academic Performance
           </h1>
-          <p className="text-[var(--color-muted)] text-lg max-w-xl mx-auto font-light">
+          <p className="text-muted text-lg max-w-xl mx-auto font-light">
             A beautiful, simple tool to track your semester grades, compute your SGPA and CGPA, and generate a personalized grade sheet.
           </p>
         </div>
@@ -190,7 +190,7 @@ export default function Home() {
         <div className="space-y-12">
           {/* Personal Details */}
           <section>
-            <Card className="bg-[var(--color-surface-card)]">
+            <Card className="bg-surface-card">
               <CardHeader>
                 <CardTitle className="text-xl">Personal Details</CardTitle>
               </CardHeader>
@@ -232,7 +232,7 @@ export default function Home() {
                   </div>
                   <div className="space-y-2">
                     <Label>Calculated Year</Label>
-                    <div className="flex h-10 w-full items-center rounded-md border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-3.5 text-sm text-[var(--color-muted)]">
+                    <div className="flex h-10 w-full items-center rounded-md border border-hairline bg-surface-soft px-3.5 text-sm text-muted">
                       {year}
                     </div>
                   </div>
@@ -243,11 +243,11 @@ export default function Home() {
 
           {/* Progressive Semester Selection */}
           <section>
-            <Card className="bg-[var(--color-surface-card)]">
-              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--color-hairline)] pb-6">
+            <Card className="bg-surface-card">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-6">
                 <div>
                   <CardTitle className="text-xl mb-1">Semester Grades</CardTitle>
-                  <p className="text-sm text-[var(--color-muted)]">Select a semester and fill out your grades.</p>
+                  <p className="text-sm text-muted">Select a semester and fill out your grades.</p>
                 </div>
                 <div className="w-full sm:w-48">
                   <Select
@@ -263,12 +263,12 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="divide-y divide-[var(--color-hairline)]">
+                <div className="divide-y divide-hairline">
                   {currentSemester.subjects.map((sub) => (
-                    <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-[var(--color-surface-soft)] transition-colors">
+                    <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-surface-soft transition-colors">
                       <div className="mb-3 sm:mb-0 sm:pr-4 flex-1">
-                        <div className="font-medium text-[var(--color-ink)]">{sub.name}</div>
-                        <div className="text-sm text-[var(--color-muted)] mt-1 font-mono">
+                        <div className="font-medium text-ink">{sub.name}</div>
+                        <div className="text-sm text-muted mt-1 font-mono">
                           {sub.code} • {sub.credit} Credits
                         </div>
                       </div>
@@ -289,7 +289,7 @@ export default function Home() {
                   ))}
                 </div>
               </CardContent>
-              <CardFooter className="bg-[var(--color-surface-soft)] border-t border-[var(--color-hairline)] p-4 sm:p-6 flex justify-between">
+              <CardFooter className="bg-surface-soft border-t border-hairline p-4 sm:p-6 flex justify-between">
                 <Button
                   variant="outline"
                   onClick={() => setCurrentSemesterId((prev) => Math.max(1, prev - 1))}
@@ -297,7 +297,7 @@ export default function Home() {
                 >
                   <ChevronLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
-                <div className="text-sm font-medium text-[var(--color-ink)] flex items-center px-4">
+                <div className="text-sm font-medium text-ink flex items-center px-4">
                   SGPA: {sgpaData[currentSemesterId]?.toFixed(2) || "0.00"}
                 </div>
                 <Button
@@ -313,8 +313,8 @@ export default function Home() {
 
           {/* Validation Error */}
           {validationError && (
-            <div className="bg-[var(--color-primary-disabled)] border border-[var(--color-primary)] text-[var(--color-ink)] px-4 py-3 rounded-lg flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-[var(--color-primary)]" />
+            <div className="bg-primary-disabled border border-primary text-ink px-4 py-3 rounded-lg flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
               <div className="text-sm font-medium leading-relaxed">{validationError}</div>
             </div>
           )}
@@ -322,8 +322,8 @@ export default function Home() {
           {/* Results & Download */}
           <section>
             <Card className="bg-transparent border-none shadow-none text-center pt-8 pb-4">
-              <h2 className="text-xl md:text-2xl font-medium title-display text-[var(--color-muted)] mb-2">Overall CGPA</h2>
-              <div className="text-6xl md:text-8xl font-bold title-display tracking-tight text-[var(--color-ink)] mb-8">
+              <h2 className="text-xl md:text-2xl font-medium title-display text-muted mb-2">Overall CGPA</h2>
+              <div className="text-6xl md:text-8xl font-bold title-display tracking-tight text-ink mb-8">
                 {cgpa.toFixed(2)}
               </div>
               
@@ -351,14 +351,14 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="border-t border-[var(--color-hairline)] py-12 mt-24">
-        <div className="max-w-3xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[var(--color-muted)]">
+      <footer className="border-t border-hairline py-12 mt-24">
+        <div className="max-w-3xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted">
           <div>Author: Anshuman Pattnaik</div>
           <div className="flex gap-6">
-            <a href="https://github.com/ANSHPG" target="_blank" rel="noreferrer" className="hover:text-[var(--color-ink)] transition-colors">
+            <a href="https://github.com/ANSHPG" target="_blank" rel="noreferrer" className="hover:text-ink transition-colors">
               GitHub
             </a>
-            <a href="https://www.linkedin.com/in/anshuman-pattnaik-9694a3255/" target="_blank" rel="noreferrer" className="hover:text-[var(--color-ink)] transition-colors">
+            <a href="https://www.linkedin.com/in/anshuman-pattnaik-9694a3255/" target="_blank" rel="noreferrer" className="hover:text-ink transition-colors">
               LinkedIn
             </a>
           </div>
