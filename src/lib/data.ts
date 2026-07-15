@@ -119,7 +119,17 @@ export const gradingScale1to2: Record<string, number> = {
   "D": 5,
   "F": 2,
   "SA": 0,
-  "M": 0
+  "M": 0,
+  // Back Paper grades under New Scheme
+  "O_BACK": 10,
+  "A_BACK": 9,
+  "B_BACK": 8,
+  "C_BACK": 7,
+  "D_BACK": 6,
+  "P_BACK": 5,
+  "F_BACK": 2,
+  "SA_BACK": 0,
+  "M_BACK": 0
 };
 
 export const gradingScale3to6: Record<string, number> = {
@@ -133,3 +143,26 @@ export const gradingScale3to6: Record<string, number> = {
   "SA": 0,
   "M": 0
 };
+
+export const gradeDisplayLabels: Record<string, string> = {
+  "O": "O (10) - Old Scheme",
+  "E": "E (9) - Old Scheme",
+  "A": "A (8) - Old Scheme",
+  "B": "B (7) - Old Scheme",
+  "C": "C (6) - Old Scheme",
+  "D": "D (5) - Old Scheme",
+  "F": "F (2)",
+  "SA": "SA (0)",
+  "M": "M (0)",
+  
+  "O_BACK": "O (10) - New Scheme / Back Paper",
+  "A_BACK": "A (9) - New Scheme / Back Paper",
+  "B_BACK": "B (8) - New Scheme / Back Paper",
+  "C_BACK": "C (7) - New Scheme / Back Paper",
+  "D_BACK": "D (6) - New Scheme / Back Paper",
+  "P_BACK": "P (5) - New Scheme / Back Paper",
+  "F_BACK": "F (2) - New Scheme / Back Paper",
+  "SA_BACK": "SA (0) - New Scheme / Back Paper",
+  "M_BACK": "M (0) - New Scheme / Back Paper"
+};
+

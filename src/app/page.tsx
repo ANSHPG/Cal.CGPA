@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { semestersData, gradingScale1to2, gradingScale3to6 } from "@/lib/data";
+import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
 import { GradeSheetPDF } from "@/components/GradeSheetPDF";
 
 export default function Home() {
@@ -165,9 +165,75 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadExcel = async () => {
+    if (!checkValidation()) {
+      return;
+    }
+
+    try {
+      setValidationError(null);
+      const response = await fetch("/api/download-excel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          studentDetails: { ...studentDetails, year },
+          grades,
+          sgpaData,
+          cgpa,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate Excel sheet");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const safeName = studentDetails.name.trim().replace(/\s+/g, "_") || "Student";
+      
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${safeName}_Academic_Record.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error(err);
+      setValidationError(err.message || "Something went wrong downloading the Excel sheet.");
+    }
+  };
+
   const currentSemester = semestersData.find((s) => s.id === currentSemesterId)!;
-  const currentScale = currentSemesterId <= 2 ? gradingScale1to2 : gradingScale3to6;
-  const gradeOptions = Object.keys(currentScale);
+  
+  // Custom styling for successive option colors to avoid grade confusion
+  const getOptionStyle = (g: string) => {
+    // Old Scheme - greens/blues
+    if (g === "O") return { backgroundColor: "#1e3a1e", color: "#6ee7b7" };
+    if (g === "E") return { backgroundColor: "#143a2e", color: "#34d399" };
+    if (g === "A") return { backgroundColor: "#063d3b", color: "#2dd4bf" };
+    if (g === "B") return { backgroundColor: "#1e3b4a", color: "#38bdf8" };
+    if (g === "C") return { backgroundColor: "#2e2e48", color: "#818cf8" };
+    if (g === "D") return { backgroundColor: "#3a2a45", color: "#c084fc" };
+    if (g === "F") return { backgroundColor: "#451e1e", color: "#f87171" };
+    if (g === "SA" || g === "M") return { backgroundColor: "#2a2a2a", color: "#a1a1aa" };
+
+    // New Scheme / Back Paper - warm terracotta/yellows
+    if (g === "O_BACK") return { backgroundColor: "#45241e", color: "#fca5a5" };
+    if (g === "A_BACK") return { backgroundColor: "#3f2b1d", color: "#fed7aa" };
+    if (g === "B_BACK") return { backgroundColor: "#372e1c", color: "#fef08a" };
+    if (g === "C_BACK") return { backgroundColor: "#2e311b", color: "#d9f99d" };
+    if (g === "D_BACK") return { backgroundColor: "#22351f", color: "#bbf7d0" };
+    if (g === "P_BACK") return { backgroundColor: "#1d352d", color: "#99f6e4" };
+    if (g === "F_BACK") return { backgroundColor: "#3f1c1c", color: "#fca5a5" };
+    if (g === "SA_BACK" || g === "M_BACK") return { backgroundColor: "#242424", color: "#d4d4d8" };
+
+    // Sem 3+ Pass grade
+    if (g === "P") return { backgroundColor: "#3f3f2a", color: "#eab308" };
+
+    return {};
+  };
 
   return (
     <div className="min-h-screen bg-canvas text-body font-sans">
@@ -264,29 +330,63 @@ export default function Home() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-hairline">
-                  {currentSemester.subjects.map((sub) => (
-                    <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-surface-soft transition-colors">
-                      <div className="mb-3 sm:mb-0 sm:pr-4 flex-1">
-                        <div className="font-medium text-ink">{sub.name}</div>
-                        <div className="text-sm text-muted mt-1 font-mono">
-                          {sub.code} • {sub.credit} Credits
+                  {currentSemester.subjects.map((sub) => {
+                    const selectedGrade = grades[currentSemesterId]?.[sub.code] || "";
+                    const isBackCleared = selectedGrade.endsWith("_BACK");
+
+                    return (
+                      <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-surface-soft transition-colors">
+                        <div className="mb-3 sm:mb-0 sm:pr-4 flex-1">
+                          <div className="font-medium text-ink flex flex-wrap items-center gap-2">
+                            <span>{sub.name}</span>
+                            {isBackCleared && (
+                              <span className="text-[10px] uppercase tracking-wider font-semibold bg-primary/20 text-primary px-2.5 py-0.5 rounded-full border border-primary/30 animate-pulse">
+                                back cleared
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted mt-1 font-mono">
+                            {sub.code} • {sub.credit} Credits
+                          </div>
+                        </div>
+                        <div className="w-full sm:w-48 shrink-0">
+                          <Select
+                            value={selectedGrade}
+                            onChange={(e) => handleGradeChange(currentSemesterId, sub.code, e.target.value)}
+                          >
+                            <option value="">Select Grade</option>
+                            
+                            {currentSemesterId <= 2 ? (
+                              <>
+                                <optgroup label="Old Scheme (Original)">
+                                  {["O", "E", "A", "B", "C", "D", "F", "SA", "M"].map((g) => (
+                                    <option key={g} value={g} style={getOptionStyle(g)}>
+                                      {gradeDisplayLabels[g] || g}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                                <optgroup label="New Scheme / Back Paper Cleared">
+                                  {["O_BACK", "A_BACK", "B_BACK", "C_BACK", "D_BACK", "P_BACK", "F_BACK", "SA_BACK", "M_BACK"].map((g) => (
+                                    <option key={g} value={g} style={getOptionStyle(g)}>
+                                      {gradeDisplayLabels[g] || g}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              </>
+                            ) : (
+                              <>
+                                {["O", "A", "B", "C", "D", "P", "F", "SA", "M"].map((g) => (
+                                  <option key={g} value={g} style={getOptionStyle(g)}>
+                                    {g} ({gradingScale3to6[g]} pts)
+                                  </option>
+                                ))}
+                              </>
+                            )}
+                          </Select>
                         </div>
                       </div>
-                      <div className="w-full sm:w-40 shrink-0">
-                        <Select
-                          value={grades[currentSemesterId]?.[sub.code] || ""}
-                          onChange={(e) => handleGradeChange(currentSemesterId, sub.code, e.target.value)}
-                        >
-                          <option value="">Select Grade</option>
-                          {gradeOptions.map((g) => (
-                            <option key={g} value={g}>
-                              {g} ({currentScale[g]} pts)
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
               <CardFooter className="bg-surface-soft border-t border-hairline p-4 sm:p-6 flex justify-between">
@@ -339,12 +439,18 @@ export default function Home() {
                     <option value="dark">Dark Theme</option>
                   </Select>
                 </div>
-                <Button size="lg" className="w-full font-bold tracking-wide shadow-md" onClick={() => {
-                  if (checkValidation()) handleDownload();
-                }}>
-                  <Download className="mr-2 h-5 w-5" />
-                  Download Grade Sheet
-                </Button>
+                
+                <div className="w-full space-y-3">
+                  <Button size="lg" className="w-full font-bold tracking-wide shadow-md" onClick={handleDownload}>
+                    <Download className="mr-2 h-5 w-5" />
+                    Download Grade Sheet (PDF)
+                  </Button>
+                  
+                  <Button size="lg" variant="outline" className="w-full font-bold tracking-wide border-hairline" onClick={handleDownloadExcel}>
+                    <Download className="mr-2 h-5 w-5" />
+                    Download Record (Excel)
+                  </Button>
+                </div>
               </div>
             </Card>
           </section>

@@ -213,15 +213,28 @@ export const GradeSheetPDF: React.FC<GradeSheetPDFProps> = ({
                   <Text style={[styles.colGrad, { fontWeight: "bold" }]}>Grade</Text>
                 </View>
                 {sem.subjects.map((sub, idx) => {
-                  const grade = grades[sem.id]?.[sub.code] || "-";
+                  const gradeKey = grades[sem.id]?.[sub.code] || "-";
+                  const isBack = gradeKey.endsWith("_BACK");
+                  const displayGrade = isBack ? gradeKey.replace("_BACK", "") : gradeKey;
                   const isAlt = idx % 2 !== 0;
+
+                  const subjectNameStyle = isBack
+                    ? [styles.colSubj, { color: "#d97757", fontWeight: "bold" }]
+                    : styles.colSubj;
+
+                  const gradeTextStyle = isBack
+                    ? [styles.colGrad, { color: "#d97757", fontWeight: "bold" }]
+                    : styles.colGrad;
+
                   return (
                     <View key={sub.code} style={[styles.tableRow, isAlt ? styles.tableRowAlt : {}]}>
                       <Text style={styles.colSl}>{idx + 1}</Text>
-                      <Text style={styles.colSubj}>{sub.name}</Text>
+                      <Text style={subjectNameStyle}>
+                        {sub.name}{isBack ? " (back cleared)" : ""}
+                      </Text>
                       <Text style={styles.colCode}>{sub.code}</Text>
                       <Text style={styles.colCred}>{sub.credit.toFixed(1)}</Text>
-                      <Text style={styles.colGrad}>{grade}</Text>
+                      <Text style={gradeTextStyle}>{displayGrade}</Text>
                     </View>
                   );
                 })}
