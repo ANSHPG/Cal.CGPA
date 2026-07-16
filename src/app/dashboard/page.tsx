@@ -81,6 +81,12 @@ export default function Home() {
         grades,
         updatedAt: new Date().toISOString(),
       });
+      // Ensure details sync to the users collection for the Admin panel and future logins
+      await updateDoc(doc(db, "users", user.uid), {
+        displayName: studentDetails.name,
+        regNo: studentDetails.rollNo,
+        branch: studentDetails.branch
+      });
       setSaveMessage("Progress saved successfully!");
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (error) {
@@ -130,6 +136,12 @@ export default function Home() {
   };
 
   // Compute Year based on max semester filled
+  const isDetailsComplete = !!(studentDetails.name && studentDetails.rollNo && studentDetails.branch);
+
+  const currentUser = auth.currentUser;
+  const hasPasswordProvider = currentUser?.providerData.some((p: any) => p.providerId === "password");
+  const [showPasswordSetup, setShowPasswordSetup] = useState(false);
+
   const year = useMemo(() => {
     const filledSemesters = Object.keys(grades)
       .filter((semId) => {
@@ -372,7 +384,14 @@ export default function Home() {
           <section>
             <Card className="bg-surface-card">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-xl">Personal Details</CardTitle>
+                <CardTitle className="text-xl flex items-center gap-3">
+                  Personal Details
+                  {isDetailsComplete ? (
+                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">Completed</span>
+                  ) : (
+                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-rose-500/10 text-rose-600 border border-rose-500/20">Missing</span>
+                  )}
+                </CardTitle>
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -430,33 +449,53 @@ export default function Home() {
                 </div>
 
                 {/* Password Change UI */}
-                <div className="mt-8 pt-8 border-t border-hairline">
-                  <h3 className="text-lg font-medium text-ink mb-4">Security</h3>
-                  <div className="flex flex-col sm:flex-row gap-4 items-end">
-                    <div className="space-y-2 flex-1 max-w-sm">
-                      <Label htmlFor="newPassword">New Password</Label>
-                      <Input
-                        id="newPassword"
-                        type="password"
-                        placeholder="Enter new password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                      />
+                {isEditingDetails && (
+                  <div className="mt-8 pt-6 border-t border-hairline">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-medium text-ink">Security</h3>
+                        <p className="text-sm text-muted">
+                          {hasPasswordProvider ? "Your account is secured with a password." : "Password not setup."}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPasswordSetup(!showPasswordSetup)}
+                      >
+                        {showPasswordSetup ? "Cancel" : (hasPasswordProvider ? "Change Password" : "Set up Password")}
+                      </Button>
                     </div>
-                    <Button
-                      onClick={handleChangePassword}
-                      disabled={isChangingPassword || !newPassword}
-                      className="bg-surface-dark text-on-dark hover:bg-surface-dark-elevated h-10"
-                    >
-                      {isChangingPassword ? "Updating..." : "Update Password"}
-                    </Button>
+
+                    {showPasswordSetup && (
+                      <div className="flex flex-col sm:flex-row gap-4 items-end mt-4 p-4 bg-surface-soft rounded-lg border border-hairline">
+                        <div className="space-y-2 flex-1 max-w-sm">
+                          <Label htmlFor="newPassword">New Password</Label>
+                          <Input
+                            id="newPassword"
+                            type="password"
+                            placeholder="Enter new password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            disabled={!isEditingDetails}
+                          />
+                        </div>
+                        <Button
+                          onClick={handleChangePassword}
+                          disabled={isChangingPassword || !newPassword || !isEditingDetails}
+                          className="bg-surface-dark text-on-dark hover:bg-surface-dark-elevated h-10"
+                        >
+                          {isChangingPassword ? "Saving..." : "Save Password"}
+                        </Button>
+                      </div>
+                    )}
+                    {passwordMessage && (
+                      <p className={`mt-2 text-sm ${passwordMessage.includes("success") ? "text-emerald-500" : "text-rose-500"}`}>
+                        {passwordMessage}
+                      </p>
+                    )}
                   </div>
-                  {passwordMessage && (
-                    <div className={`mt-2 text-sm ${passwordMessage.includes("successfully") ? "text-primary" : "text-red-500"}`}>
-                      {passwordMessage}
-                    </div>
-                  )}
-                </div>
+                )}
               </CardContent>
             </Card>
           </section>
