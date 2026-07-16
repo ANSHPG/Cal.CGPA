@@ -489,7 +489,7 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="divide-y divide-hairline border border-hairline rounded-lg overflow-hidden bg-surface-card">
+                    <div className="divide-y divide-hairline border border-hairline rounded-lg bg-surface-card">
                       {semestersData.find(s => s.id === currentSemesterId)?.subjects.map((sub) => {
                         const gradesObj = studentGrades.grades?.[currentSemesterId] || {};
                         const grade = gradesObj[sub.code] || "";

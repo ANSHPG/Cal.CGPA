@@ -369,9 +369,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-canvas text-body font-sans">
       <header className="h-16 border-b border-hairline flex items-center justify-between px-6 md:px-12 sticky top-0 z-10 bg-canvas/80 backdrop-blur-md">
-        <div className="font-medium text-xl text-ink title-display italic">
+        <Link href="/dashboard" className="font-medium text-xl text-ink title-display italic hover:opacity-80 transition-opacity">
           Cal.CGPA
-        </div>
+        </Link>
         <div className="flex items-center gap-4">
           {user?.role === "admin" && (
             <Link href="/admin" className="text-sm font-medium text-primary hover:text-primary/80 flex items-center gap-1">

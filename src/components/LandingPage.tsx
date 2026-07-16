@@ -14,9 +14,9 @@ export function LandingPage() {
       <div className="min-h-screen flex flex-col relative z-10">
         {/* Top Nav */}
         <header className="h-20 border-b border-[#252320] flex items-center justify-between px-6 md:px-12 bg-[#181715]">
-          <div className="font-serif text-2xl tracking-tight text-[#faf9f5]">
+          <Link href="/dashboard" className="font-serif text-2xl tracking-tight text-[#faf9f5] hover:text-[#a09d96] transition-colors">
             Cal.CGPA
-          </div>
+          </Link>
           <div className="flex items-center gap-6">
             <Link href="/login">
               <button className="text-[14px] font-medium text-[#faf9f5] hover:text-[#a09d96] transition-colors">
