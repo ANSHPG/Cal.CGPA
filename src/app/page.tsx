@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
 import { GradeSheetPDF } from "@/components/GradeSheetPDF";
+import { LandingPage } from "@/components/LandingPage";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -34,11 +35,7 @@ export default function Home() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
-  React.useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
+
 
   React.useEffect(() => {
     async function fetchData() {
@@ -94,7 +91,7 @@ export default function Home() {
     );
   }
 
-  if (!user) return null; // Avoid flashing unauthenticated content
+  if (!user) return <LandingPage />;
 
   const handleDetailChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setStudentDetails((prev) => ({ ...prev, [e.target.name]: e.target.value }));
