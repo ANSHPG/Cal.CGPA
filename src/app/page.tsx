@@ -25,6 +25,7 @@ export default function Home() {
     rollNo: "",
     branch: "Electrical Engineering",
   });
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
 
   const [grades, setGrades] = useState<Record<number, Record<string, string>>>({});
   const [currentSemesterId, setCurrentSemesterId] = useState(1);
@@ -46,6 +47,7 @@ export default function Home() {
           ...prev,
           name: user.displayName || prev.name,
           rollNo: user.regNo || prev.rollNo,
+          branch: user.branch || prev.branch,
         }));
 
         try {
@@ -341,8 +343,16 @@ export default function Home() {
           {/* Personal Details */}
           <section>
             <Card className="bg-surface-card">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-xl">Personal Details</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-hairline h-8"
+                  onClick={() => setIsEditingDetails(!isEditingDetails)}
+                >
+                  {isEditingDetails ? "Lock Details" : "Edit Details"}
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -354,6 +364,8 @@ export default function Home() {
                       placeholder="e.g. Anshuman Pattnaik"
                       value={studentDetails.name}
                       onChange={handleDetailChange}
+                      disabled={!isEditingDetails}
+                      className={!isEditingDetails ? "opacity-70 bg-surface-soft cursor-not-allowed" : ""}
                     />
                   </div>
                   <div className="space-y-2">
@@ -364,6 +376,8 @@ export default function Home() {
                       placeholder="e.g. 23110409"
                       value={studentDetails.rollNo}
                       onChange={handleDetailChange}
+                      disabled={!isEditingDetails}
+                      className={!isEditingDetails ? "opacity-70 bg-surface-soft cursor-not-allowed" : ""}
                     />
                   </div>
                   <div className="space-y-2">
@@ -373,11 +387,10 @@ export default function Home() {
                       name="branch"
                       value={studentDetails.branch}
                       onChange={handleDetailChange}
+                      disabled={!isEditingDetails}
                     >
                       <option value="Electrical Engineering">Electrical Engineering</option>
-                      <option value="Computer Science">Computer Science</option>
-                      <option value="Mechanical Engineering">Mechanical Engineering</option>
-                      <option value="Civil Engineering">Civil Engineering</option>
+                      {/* Later we will add other branches */}
                     </Select>
                   </div>
                   <div className="space-y-2">

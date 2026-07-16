@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     await workbook.xlsx.readFile(templatePath);
 
     // 1. Populate the "Overall" Sheet
-    const overallSheet = workbook.getWorksheet("Overall");
+    const overallSheet = workbook.getWorksheet("Student Summary");
     if (overallSheet) {
       // Cell B3: Student Name
       overallSheet.getCell("B3").value = studentDetails.name || "N/A";

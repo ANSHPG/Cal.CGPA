@@ -17,6 +17,7 @@ interface Student {
   email: string;
   displayName: string;
   regNo: string;
+  branch?: string;
 }
 
 export default function AdminPage() {
@@ -29,6 +30,7 @@ export default function AdminPage() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentGrades, setStudentGrades] = useState<any>(null);
   const [loadingGrades, setLoadingGrades] = useState(false);
+  const [currentSemesterId, setCurrentSemesterId] = useState(1);
 
   useEffect(() => {
     if (!loading) {
@@ -75,6 +77,7 @@ export default function AdminPage() {
     setSelectedStudent(student);
     setLoadingGrades(true);
     setStudentGrades(null);
+    setCurrentSemesterId(1);
     try {
       const docRef = doc(db, "grades", student.uid);
       const docSnap = await getDoc(docRef);
@@ -185,9 +188,16 @@ export default function AdminPage() {
                     <CardTitle className="text-2xl text-ink font-serif italic mb-1">
                       {selectedStudent.displayName || "Unknown Student"}
                     </CardTitle>
-                    <div className="text-sm text-muted font-mono flex gap-4">
+                    <div className="text-sm text-muted font-mono flex gap-4 mt-2">
                       <span>{selectedStudent.regNo || "No RegNo"}</span>
+                      <span>•</span>
                       <span>{selectedStudent.email}</span>
+                      {selectedStudent.branch && (
+                        <>
+                          <span>•</span>
+                          <span>{selectedStudent.branch}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   {studentGrades && (
@@ -204,43 +214,61 @@ export default function AdminPage() {
                 {loadingGrades ? (
                   <div className="text-center py-12 text-muted">Loading grades...</div>
                 ) : studentGrades && Object.keys(studentGrades.grades || {}).length > 0 ? (
-                  <div className="space-y-8">
-                    {semestersData.map((sem) => {
-                      const grades = studentGrades.grades[sem.id];
-                      if (!grades || Object.values(grades).every((g) => g === "")) return null;
+                  <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-6">
+                      <div>
+                        <h3 className="text-xl font-medium title-display text-ink">Semester Grades</h3>
+                      </div>
+                      <div className="w-full sm:w-48 shrink-0">
+                        <select
+                          className="w-full px-3 py-2 border border-hairline rounded-md bg-surface-soft text-ink focus:outline-none"
+                          value={currentSemesterId}
+                          onChange={(e) => setCurrentSemesterId(Number(e.target.value))}
+                        >
+                          {semestersData.map((sem) => (
+                            <option key={sem.id} value={sem.id}>
+                              {sem.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
 
-                      return (
-                        <div key={sem.id}>
-                          <h3 className="text-lg font-medium text-ink mb-3 title-display border-b border-hairline pb-2">
-                            {sem.label}
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {sem.subjects.map((sub) => {
-                              const grade = grades[sub.code];
-                              if (!grade) return null;
-                              
-                              const isBackCleared = grade.endsWith("_BACK");
-                              const displayGrade = grade.replace("_BACK", "");
+                    <div className="divide-y divide-hairline border border-hairline rounded-lg overflow-hidden bg-surface-card">
+                      {semestersData.find(s => s.id === currentSemesterId)?.subjects.map((sub) => {
+                        const gradesObj = studentGrades.grades[currentSemesterId] || {};
+                        const grade = gradesObj[sub.code];
+                        const isBackCleared = grade && grade.endsWith("_BACK");
+                        const displayGrade = grade ? grade.replace("_BACK", "") : "Not filled";
 
-                              return (
-                                <div key={sub.code} className="bg-surface-soft p-3 rounded-md flex justify-between items-center border border-hairline">
-                                  <div className="text-sm">
-                                    <div className="font-medium text-ink truncate max-w-[200px]" title={sub.name}>{sub.name}</div>
-                                    <div className="text-muted font-mono text-xs">{sub.code}</div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {isBackCleared && (
-                                      <span className="text-[10px] uppercase font-semibold text-primary/80">Back Cleared</span>
-                                    )}
-                                    <div className="font-bold text-lg text-ink w-8 text-center">{displayGrade}</div>
-                                  </div>
+                        return (
+                          <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-surface-soft transition-colors">
+                            <div className="mb-2 sm:mb-0">
+                              <div className="font-medium text-ink flex items-center gap-2">
+                                <span>{sub.name}</span>
+                                {isBackCleared && (
+                                  <span className="text-[10px] uppercase tracking-wider font-semibold bg-primary/20 text-primary px-2 py-0.5 rounded-full border border-primary/30">
+                                    back cleared
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-sm text-muted mt-1 font-mono">
+                                {sub.code} • {sub.credit} Credits
+                              </div>
+                            </div>
+                            <div className="shrink-0 flex items-center justify-end sm:w-32">
+                              {grade ? (
+                                <div className="font-bold text-lg text-ink bg-surface-soft px-4 py-1 rounded-md border border-hairline">
+                                  {displayGrade}
                                 </div>
-                              );
-                            })}
+                              ) : (
+                                <div className="text-sm text-muted italic">--</div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-12 text-muted">

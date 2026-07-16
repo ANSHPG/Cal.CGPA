@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [regNo, setRegNo] = useState("");
   const [name, setName] = useState("");
+  const [branch, setBranch] = useState("Electrical Engineering");
   const [error, setError] = useState("");
   const { signInWithGoogle } = useAuth();
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function RegisterPage() {
         email: user.email,
         displayName: name,
         regNo: regNo,
+        branch: branch,
         role: "student", // default role
       });
 
@@ -96,6 +98,25 @@ export default function RegisterPage() {
                   onChange={(e) => setRegNo(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-[#404040] rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-[#d97757] focus:border-[#d97757] sm:text-sm bg-[#1E1E1E] text-white"
                 />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="branch" className="block text-sm font-medium text-gray-300">
+                Branch
+              </label>
+              <div className="mt-1">
+                <select
+                  id="branch"
+                  name="branch"
+                  required
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                  className="block w-full px-3 py-2 border border-[#404040] rounded-md shadow-sm focus:outline-none focus:ring-[#d97757] focus:border-[#d97757] sm:text-sm bg-[#1E1E1E] text-white"
+                >
+                  <option value="Electrical Engineering">Electrical Engineering</option>
+                  {/* Later we will add other branches */}
+                </select>
               </div>
             </div>
 

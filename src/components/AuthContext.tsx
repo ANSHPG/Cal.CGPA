@@ -16,6 +16,7 @@ interface UserProfile {
   email: string | null;
   displayName: string | null;
   regNo?: string;
+  branch?: string;
   role: "student" | "admin";
 }
 
