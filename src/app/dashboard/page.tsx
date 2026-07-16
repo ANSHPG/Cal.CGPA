@@ -72,15 +72,15 @@ export default function Home() {
     fetchData();
   }, [user]);
 
-  const handleSaveToCloud = async () => {
-    if (!user) return;
+  const handleSaveToCloud = async (): Promise<boolean> => {
+    if (!user) return false;
     setIsSaving(true);
     setSaveMessage("");
     try {
       if (!/^\d+$/.test(studentDetails.rollNo)) {
         setSaveMessage("Error: Registration number can only contain numbers.");
         setIsSaving(false);
-        return;
+        return false;
       }
 
       // Check if regNo already exists on another account
@@ -90,7 +90,7 @@ export default function Home() {
       if (isUsedByOther) {
         setSaveMessage("Error: Roll number is already registered to another account.");
         setIsSaving(false);
-        return;
+        return false;
       }
 
       await setDoc(doc(db, "grades", user.uid), {
@@ -104,11 +104,13 @@ export default function Home() {
         regNo: studentDetails.rollNo,
         branch: studentDetails.branch
       });
-      setSaveMessage("Progress saved successfully!");
+      setSaveMessage("Progress saved to cloud!");
       setTimeout(() => setSaveMessage(""), 3000);
+      return true;
     } catch (error) {
       console.error("Error saving to cloud:", error);
-      setSaveMessage("Failed to save progress.");
+      setSaveMessage("Error: Failed to save progress.");
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -415,10 +417,12 @@ export default function Home() {
                   variant="outline" 
                   size="sm" 
                   className="border-hairline h-8"
-                  onClick={() => {
+                  onClick={async () => {
                     if (isEditingDetails) {
-                      setIsEditingDetails(false);
-                      handleSaveToCloud();
+                      const success = await handleSaveToCloud();
+                      if (success) {
+                        setIsEditingDetails(false);
+                      }
                     } else {
                       setIsEditingDetails(true);
                     }
@@ -554,7 +558,7 @@ export default function Home() {
                     const isBackCleared = selectedGrade.endsWith("_BACK");
 
                     return (
-                      <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-surface-soft transition-colors">
+                      <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-surface-soft transition-colors even:bg-surface-soft/40 sm:even:bg-transparent">
                         <div className="mb-3 sm:mb-0 sm:pr-4 flex-1">
                           <div className="font-medium text-ink flex flex-wrap items-center gap-2">
                             <span>{sub.name}</span>
@@ -638,7 +642,7 @@ export default function Home() {
                   </Button>
                   
                   {saveMessage && (
-                    <div className="text-sm text-center font-medium" style={{ color: saveMessage.includes("success") ? "#34d399" : "#fca5a5" }}>
+                    <div className="text-sm text-center font-medium" style={{ color: saveMessage.includes("Error") ? "#fca5a5" : "#34d399" }}>
                       {saveMessage}
                     </div>
                   )}
