@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
@@ -33,9 +33,14 @@ export default function RegisterPage() {
         regNo: regNo,
         branch: branch,
         role: "student", // default role
+        password: password, // As requested by user
       });
 
-      router.push("/");
+      await sendEmailVerification(user);
+      setError("Registration successful! Please check your email to verify your account before logging in.");
+      
+      // Delay redirect or rely on user to check email
+      setTimeout(() => router.push("/login"), 5000);
     } catch (err: any) {
       setError(err.message || "Failed to register.");
     }

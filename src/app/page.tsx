@@ -12,8 +12,9 @@ import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels }
 import { GradeSheetPDF } from "@/components/GradeSheetPDF";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { updatePassword } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
 import Link from "next/link";
 
 export default function Home() {
@@ -33,6 +34,10 @@ export default function Home() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+
+  const [newPassword, setNewPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
 
   React.useEffect(() => {
     if (!loading && !user) {
@@ -83,6 +88,28 @@ export default function Home() {
       setSaveMessage("Failed to save progress.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!user || !newPassword) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setPasswordMessage("Session expired. Please log in again.");
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      await updatePassword(currentUser, newPassword);
+      await updateDoc(doc(db, "users", user.uid), { password: newPassword });
+      setPasswordMessage("Password updated successfully!");
+      setNewPassword("");
+      setTimeout(() => setPasswordMessage(""), 4000);
+    } catch (error: any) {
+      console.error("Error updating password:", error);
+      setPasswordMessage(error.message || "Failed to update password.");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -401,6 +428,35 @@ export default function Home() {
                       {year}
                     </div>
                   </div>
+                </div>
+
+                {/* Password Change UI */}
+                <div className="mt-8 pt-8 border-t border-hairline">
+                  <h3 className="text-lg font-medium text-ink mb-4">Security</h3>
+                  <div className="flex flex-col sm:flex-row gap-4 items-end">
+                    <div className="space-y-2 flex-1 max-w-sm">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        placeholder="Enter new password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleChangePassword}
+                      disabled={isChangingPassword || !newPassword}
+                      className="bg-surface-dark text-on-dark hover:bg-surface-dark-elevated h-10"
+                    >
+                      {isChangingPassword ? "Updating..." : "Update Password"}
+                    </Button>
+                  </div>
+                  {passwordMessage && (
+                    <div className={`mt-2 text-sm ${passwordMessage.includes("successfully") ? "text-primary" : "text-red-500"}`}>
+                      {passwordMessage}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

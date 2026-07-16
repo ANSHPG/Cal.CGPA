@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [emailOrRegNo, setEmailOrRegNo] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const { signInWithGoogle } = useAuth();
@@ -18,7 +19,29 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      let loginEmail = emailOrRegNo;
+
+      // If it doesn't look like an email, assume it's a RegNo and look up the email in Firestore
+      if (!emailOrRegNo.includes("@")) {
+        const q = query(collection(db, "users"), where("regNo", "==", emailOrRegNo));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+          throw new Error("No user found with this Registration Number.");
+        }
+        
+        // Use the email from the first matched document
+        loginEmail = querySnapshot.docs[0].data().email;
+      }
+
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
+      
+      // Check if email is verified
+      if (!userCredential.user.emailVerified) {
+        await auth.signOut();
+        throw new Error("Please verify your email address. Check your inbox for the verification link.");
+      }
+
       router.push("/");
     } catch (err: any) {
       setError(err.message || "Failed to login. Check your credentials.");
@@ -52,18 +75,18 @@ export default function LoginPage() {
             )}
             
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                Email address
+              <label htmlFor="emailOrRegNo" className="block text-sm font-medium text-gray-300">
+                Email address or RegNo
               </label>
               <div className="mt-1">
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
+                  id="emailOrRegNo"
+                  name="emailOrRegNo"
+                  type="text"
                   autoComplete="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={emailOrRegNo}
+                  onChange={(e) => setEmailOrRegNo(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-[#404040] rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-[#d97757] focus:border-[#d97757] sm:text-sm bg-[#1E1E1E] text-white"
                 />
               </div>

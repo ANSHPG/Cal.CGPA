@@ -18,6 +18,7 @@ interface Student {
   displayName: string;
   regNo: string;
   branch?: string;
+  password?: string;
 }
 
 export default function AdminPage() {
@@ -250,6 +251,11 @@ export default function AdminPage() {
                         </>
                       )}
                     </div>
+                    {selectedStudent.password && (
+                      <div className="text-sm text-primary font-mono flex gap-2 mt-2 bg-primary/10 px-2 py-1 rounded inline-block">
+                        Password: {selectedStudent.password}
+                      </div>
+                    )}
                   </div>
                   {studentGrades && (
                     <div className="text-left sm:text-right flex flex-col sm:items-end w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t border-hairline sm:border-0">
