@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
-import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Search, User as UserIcon, Save, Download } from "lucide-react";
+import { ArrowLeft, Search, User as UserIcon, Save, Download, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
 import { GradeDropdown } from "@/components/GradeDropdown";
@@ -62,8 +62,15 @@ export default function AdminPage() {
           studentsList.push(data as Student);
         }
       });
-      // Sort students by regNo (ascending)
+      // Sort students by regNo (ascending), putting empty regNo at bottom
       studentsList.sort((a, b) => {
+        const hasRegA = a.regNo && a.regNo.trim() !== "";
+        const hasRegB = b.regNo && b.regNo.trim() !== "";
+        
+        if (hasRegA && !hasRegB) return -1;
+        if (!hasRegA && hasRegB) return 1;
+        if (!hasRegA && !hasRegB) return 0;
+
         const regA = Number(a.regNo) || 0;
         const regB = Number(b.regNo) || 0;
         return regA - regB;
@@ -153,6 +160,29 @@ export default function AdminPage() {
       console.error("Error saving credentials:", error);
     } finally {
       setIsSavingCredentials(false);
+    }
+  };
+
+  const handleDeleteStudentData = async () => {
+    if (!selectedStudent) return;
+    
+    if (confirm(`Are you sure you want to permanently delete all data for ${selectedStudent.displayName || selectedStudent.email}? This cannot be undone.`)) {
+      try {
+        await deleteDoc(doc(db, "users", selectedStudent.uid));
+        await deleteDoc(doc(db, "grades", selectedStudent.uid));
+        
+        // Remove from local state
+        const newStudents = students.filter(s => s.uid !== selectedStudent.uid);
+        setStudents(newStudents);
+        setFilteredStudents(newStudents);
+        setSelectedStudent(null);
+        setStudentGrades(null);
+        
+        alert("Student data has been deleted from the database.");
+      } catch (error) {
+        console.error("Error deleting student data:", error);
+        alert("Failed to delete student data.");
+      }
     }
   };
 
@@ -350,7 +380,7 @@ export default function AdminPage() {
                             </>
                           )}
                         </div>
-                        <div className="mt-2">
+                        <div className="mt-2 flex items-center gap-2">
                           <Button 
                             onClick={() => setIsEditingCredentials(true)}
                             variant="ghost" 
@@ -358,6 +388,14 @@ export default function AdminPage() {
                             className="text-xs text-primary hover:text-primary-active h-6 px-2 -ml-2"
                           >
                             Edit Credentials
+                          </Button>
+                          <Button 
+                            onClick={handleDeleteStudentData}
+                            variant="ghost" 
+                            size="sm"
+                            className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 h-6 px-2"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" /> Delete Data
                           </Button>
                         </div>
                       </>
