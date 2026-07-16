@@ -44,7 +44,7 @@ export default function AdminPage() {
       if (!user) {
         router.push("/login");
       } else if (user.role !== "admin") {
-        router.push("/");
+        router.push("/dashboard");
       } else {
         fetchStudents();
       }

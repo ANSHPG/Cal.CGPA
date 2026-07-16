@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [emailOrRegNo, setEmailOrRegNo] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, user, loading } = useAuth();
   const router = useRouter();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -45,7 +45,7 @@ export default function LoginPage() {
         console.error("Failed to sync password to firestore", e);
       }
 
-      router.push("/");
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Failed to login. Check your credentials.");
     }
@@ -54,11 +54,17 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     try {
       await signInWithGoogle();
-      router.push("/");
+      router.push("/dashboard");
     } catch (err: any) {
       setError("Google sign-in failed.");
     }
   };
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, loading, router]);
 
   return (
     <div className="min-h-screen bg-[#1E1E1E] text-[#E0E0E0] font-sans flex flex-col justify-center py-12 sm:px-6 lg:px-8">
