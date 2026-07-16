@@ -314,12 +314,15 @@ export default function AdminPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-muted">Email (Display Only)</label>
+                          <label className="text-xs text-muted">Email (Read-Only)</label>
                           <Input 
                             value={editCreds.email} 
-                            onChange={e => setEditCreds({...editCreds, email: e.target.value})}
-                            className="h-8 text-sm bg-surface-card"
+                            disabled
+                            className="h-8 text-sm bg-surface-card opacity-50 cursor-not-allowed"
                           />
+                          <p className="text-[10px] text-muted mt-1 leading-tight">
+                            Email cannot be changed here because it is linked to the user's Firebase Auth credentials.
+                          </p>
                         </div>
                         <div>
                           <label className="text-xs text-muted">Branch</label>
