@@ -10,7 +10,6 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
 import { GradeSheetPDF } from "@/components/GradeSheetPDF";
-import { LandingPage } from "@/components/LandingPage";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -35,7 +34,11 @@ export default function Home() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
-
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push("/home");
+    }
+  }, [user, loading, router]);
 
   React.useEffect(() => {
     async function fetchData() {
@@ -305,7 +308,7 @@ export default function Home() {
     return {};
   };
 
-  if (!user) return <LandingPage />;
+  if (!user) return null; // Prevent flash of content before redirect
 
   return (
     <div className="min-h-screen bg-canvas text-body font-sans">
