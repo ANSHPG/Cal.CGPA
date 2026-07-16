@@ -59,14 +59,15 @@ export function GradeDropdown({ value, onChange, semesterId }: GradeDropdownProp
   return (
     <div className="relative w-full" ref={containerRef}>
       <div
-        className="w-full flex items-center justify-between px-3 py-2 border border-hairline rounded-md bg-surface-soft text-ink cursor-pointer min-h-[40px] shadow-sm"
+        className="flex h-10 w-full appearance-none rounded-md border border-hairline bg-canvas px-3.5 py-2 pr-8 text-sm text-ink placeholder:text-muted-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ink transition-colors cursor-pointer items-center justify-between"
         onClick={() => setIsOpen(!isOpen)}
-        style={value ? getOptionStyle(value) : {}}
       >
-        <span className={`text-sm ${!value ? "text-muted" : "font-medium"}`}>
+        <span className="truncate">
           {value ? (gradeDisplayLabels[value] || value) : "Select Grade"}
         </span>
-        <ChevronDown className="w-4 h-4 text-muted shrink-0 ml-2" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-muted">
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </div>
       </div>
 
       {isOpen && (
