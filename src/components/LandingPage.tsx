@@ -43,9 +43,8 @@ export function LandingPage() {
             A considered approach <br /> to academic tracking.
           </h1>
 
-          {/* Subheadline - StyreneB/Inter approximation */}
           <p className="text-[#a09d96] text-[18px] md:text-[22px] max-w-2xl mx-auto font-normal leading-[1.55] mb-12">
-            The premier CGPA calculator and ERP dashboard for Electrical Engineering students. 
+            The premier CGPA calculator and ERP dashboard for ambitious students across all institutions. 
             Engineered for clarity, precision, and speed.
           </p>
 
@@ -81,7 +80,7 @@ export function LandingPage() {
               </div>
               <div className="flex mb-1">
                 <span className="w-8 text-right mr-4 text-[#a09d96] opacity-50">3</span>
-                <span className="text-[#5db8a6] ml-8">branch:</span> <span className="text-[#e8a55a] ml-2">"Electrical Engineering"</span>,
+                <span className="text-[#5db8a6] ml-8">institution:</span> <span className="text-[#e8a55a] ml-2">"Global University"</span>,
               </div>
               <div className="flex mb-1">
                 <span className="w-8 text-right mr-4 text-[#a09d96] opacity-50">4</span>
