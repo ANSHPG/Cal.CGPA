@@ -113,15 +113,6 @@ export default function Home() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
-        <div className="text-[#E0E0E0] text-xl font-serif italic">Loading...</div>
-      </div>
-    );
-  }
-
-
 
   const handleDetailChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setStudentDetails((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -334,6 +325,14 @@ export default function Home() {
 
     return {};
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
+        <div className="text-[#E0E0E0] text-xl font-serif italic">Loading...</div>
+      </div>
+    );
+  }
 
   if (!user) return null; // Prevent flash of content before redirect
 
