@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [branch, setBranch] = useState("Electrical Engineering");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { signInWithGoogle } = useAuth();
   const router = useRouter();
 
@@ -29,9 +30,12 @@ export default function RegisterPage() {
       return;
     }
 
+    setIsLoading(true);
+
     try {
       if (!/^\d+$/.test(regNo)) {
         setError("Registration number can only contain numerical values.");
+        setIsLoading(false);
         return;
       }
 
@@ -40,6 +44,7 @@ export default function RegisterPage() {
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         setError("Caution: Roll number is already registered.");
+        setIsLoading(false);
         return;
       }
 
@@ -61,6 +66,7 @@ export default function RegisterPage() {
       setTimeout(() => router.push("/login"), 2000);
     } catch (err: any) {
       setError(err.message || "Failed to register.");
+      setIsLoading(false);
     }
   };
   
@@ -182,9 +188,10 @@ export default function RegisterPage() {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#d97757] hover:bg-[#c66646] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#d97757] focus:ring-offset-[#1E1E1E] transition-colors"
+                disabled={isLoading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#d97757] hover:bg-[#c66646] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#d97757] focus:ring-offset-[#1E1E1E] transition-colors disabled:opacity-50"
               >
-                Register
+                {isLoading ? "Registering..." : "Register"}
               </button>
             </div>
           </form>
