@@ -12,7 +12,8 @@ import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels }
 import { GradeSheetPDF } from "@/components/GradeSheetPDF";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { GradeDropdown } from "@/components/GradeDropdown";
+import { doc, getDoc, setDoc, updateDoc, query, collection, where, getDocs } from "firebase/firestore";
 import { updatePassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import Link from "next/link";
@@ -76,6 +77,22 @@ export default function Home() {
     setIsSaving(true);
     setSaveMessage("");
     try {
+      if (!/^\d+$/.test(studentDetails.rollNo)) {
+        setSaveMessage("Error: Registration number can only contain numbers.");
+        setIsSaving(false);
+        return;
+      }
+
+      // Check if regNo already exists on another account
+      const q = query(collection(db, "users"), where("regNo", "==", studentDetails.rollNo));
+      const querySnapshot = await getDocs(q);
+      const isUsedByOther = querySnapshot.docs.some(docSnap => docSnap.id !== user.uid);
+      if (isUsedByOther) {
+        setSaveMessage("Error: Roll number is already registered to another account.");
+        setIsSaving(false);
+        return;
+      }
+
       await setDoc(doc(db, "grades", user.uid), {
         studentDetails,
         grades,
@@ -552,39 +569,11 @@ export default function Home() {
                           </div>
                         </div>
                         <div className="w-full sm:w-48 shrink-0">
-                          <Select
+                          <GradeDropdown
                             value={selectedGrade}
-                            onChange={(e) => handleGradeChange(currentSemesterId, sub.code, e.target.value)}
-                          >
-                            <option value="">Select Grade</option>
-                            
-                            {currentSemesterId <= 2 ? (
-                              <>
-                                <optgroup label="Old Scheme (Original)">
-                                  {["O", "E", "A", "B", "C", "D", "F", "SA", "M"].map((g) => (
-                                    <option key={g} value={g} style={getOptionStyle(g)}>
-                                      {gradeDisplayLabels[g] || g}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                                <optgroup label="New Scheme / Back Paper Cleared">
-                                  {["O_BACK", "A_BACK", "B_BACK", "C_BACK", "D_BACK", "P_BACK", "F_BACK", "SA_BACK", "M_BACK"].map((g) => (
-                                    <option key={g} value={g} style={getOptionStyle(g)}>
-                                      {gradeDisplayLabels[g] || g}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              </>
-                            ) : (
-                              <>
-                                {["O", "A", "B", "C", "D", "P", "F", "SA", "M"].map((g) => (
-                                  <option key={g} value={g} style={getOptionStyle(g)}>
-                                    {g} ({gradingScale3to6[g]} pts)
-                                  </option>
-                                ))}
-                              </>
-                            )}
-                          </Select>
+                            onChange={(val) => handleGradeChange(currentSemesterId, sub.code, val)}
+                            semesterId={currentSemesterId}
+                          />
                         </div>
                       </div>
                     );

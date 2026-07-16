@@ -30,6 +30,11 @@ export default function RegisterPage() {
     }
 
     try {
+      if (!/^\d+$/.test(regNo)) {
+        setError("Registration number can only contain numerical values.");
+        return;
+      }
+
       // Check if regNo already exists
       const q = query(collection(db, "users"), where("regNo", "==", regNo));
       const querySnapshot = await getDocs(q);

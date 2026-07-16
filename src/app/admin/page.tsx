@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Search, User as UserIcon, Save } from "lucide-react";
 import Link from "next/link";
-import { gradingScale1to2, gradingScale3to6, semestersData, gradeDisplayLabels } from "@/lib/data";
+import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
+import { GradeDropdown } from "@/components/GradeDropdown";
 
 interface Student {
   uid: string;
@@ -366,11 +367,16 @@ export default function AdminPage() {
                         </Button>
                       ) : (
                         <Button 
-                          onClick={() => setIsEditing(true)} 
+                          onClick={() => {
+                            if (!studentGrades) {
+                              setStudentGrades({ grades: {} });
+                            }
+                            setIsEditing(true);
+                          }}
                           variant="outline" 
                           className="text-xs py-1 h-8 w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-white"
                         >
-                          Edit Grades
+                          {studentGrades ? "Edit Grades" : "Assign Grades"}
                         </Button>
                       )}
                     </div>
@@ -380,16 +386,14 @@ export default function AdminPage() {
               <CardContent className="p-6">
                 {loadingGrades ? (
                   <div className="text-center py-12 text-muted">Loading grades...</div>
-                ) : studentGrades && Object.keys(studentGrades.grades || {}).length > 0 ? (
+                ) : studentGrades ? (
                   <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-hairline pb-6">
                       <div className="flex items-baseline gap-4 w-full sm:w-auto">
                         <h3 className="text-xl font-medium title-display text-ink">Semester Grades</h3>
-                        {studentGrades && (
-                          <div className="text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
-                            SGPA: {calculateSgpa(studentGrades.grades, currentSemesterId)}
-                          </div>
-                        )}
+                        <div className="text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
+                          SGPA: {calculateSgpa(studentGrades.grades, currentSemesterId)}
+                        </div>
                       </div>
                       <div className="w-full sm:w-48 shrink-0">
                         <select
@@ -415,7 +419,7 @@ export default function AdminPage() {
 
                         return (
                           <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-surface-soft transition-colors">
-                            <div className="mb-2 sm:mb-0">
+                            <div className="mb-2 sm:mb-0 flex-1">
                               <div className="font-medium text-ink flex items-center gap-2">
                                 <span>{sub.name}</span>
                                 {isBackCleared && (
@@ -428,23 +432,15 @@ export default function AdminPage() {
                                 {sub.code} • {sub.credit} Credits
                               </div>
                             </div>
-                            <div className="shrink-0 flex items-center justify-end sm:w-48">
+                            <div className="shrink-0 flex items-center justify-end w-full sm:w-48 mt-2 sm:mt-0">
                               {isEditing ? (
-                                <select
-                                  className="w-full px-2 py-1 border border-hairline rounded-md bg-surface-soft text-ink focus:outline-none text-sm font-bold"
+                                <GradeDropdown
                                   value={grade}
-                                  onChange={(e) => handleGradeChange(currentSemesterId, sub.code, e.target.value)}
-                                >
-                                  <option value="">Select</option>
-                                  {(currentSemesterId <= 2 ? gradingScale1to2 : gradingScale3to6) &&
-                                    Object.keys(currentSemesterId <= 2 ? gradingScale1to2 : gradingScale3to6).map((g) => (
-                                      <option key={g} value={g}>
-                                        {gradeDisplayLabels[g] || g}
-                                      </option>
-                                    ))}
-                                </select>
+                                  onChange={(val) => handleGradeChange(currentSemesterId, sub.code, val)}
+                                  semesterId={currentSemesterId}
+                                />
                               ) : grade ? (
-                                <div className="font-bold text-lg text-ink bg-surface-soft px-4 py-1 rounded-md border border-hairline">
+                                <div className="font-bold text-lg text-ink bg-surface-soft px-4 py-1 rounded-md border border-hairline min-w-[60px] text-center">
                                   {displayGrade}
                                 </div>
                               ) : (
@@ -457,8 +453,18 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-muted">
-                    This student hasn't saved any grades yet.
+                  <div className="text-center py-12 text-muted flex flex-col items-center">
+                    <p className="mb-4">This student hasn't saved any grades yet.</p>
+                    <Button 
+                      onClick={() => {
+                        setStudentGrades({ grades: {} });
+                        setIsEditing(true);
+                      }}
+                      variant="outline"
+                      className="border-primary text-primary"
+                    >
+                      Assign Grades Manually
+                    </Button>
                   </div>
                 )}
               </CardContent>
