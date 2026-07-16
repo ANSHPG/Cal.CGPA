@@ -477,7 +477,12 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-
+                {saveMessage && saveMessage.includes("Error") && isEditingDetails && (
+                  <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-md text-rose-500 text-sm font-medium flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    {saveMessage.replace("Error: ", "")}
+                  </div>
+                )}
                 {/* Password Change UI */}
                 {isEditingDetails && (
                   <div className="mt-8 pt-6 border-t border-hairline">
@@ -558,7 +563,7 @@ export default function Home() {
                     const isBackCleared = selectedGrade.endsWith("_BACK");
 
                     return (
-                      <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-surface-soft transition-colors even:bg-surface-soft/40 sm:even:bg-transparent">
+                      <div key={sub.code} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-surface-soft transition-colors even:bg-surface-soft sm:even:bg-transparent">
                         <div className="mb-3 sm:mb-0 sm:pr-4 flex-1">
                           <div className="font-medium text-ink flex flex-wrap items-center gap-2">
                             <span>{sub.name}</span>
