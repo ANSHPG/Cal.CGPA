@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Search, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Search, User as UserIcon, Save } from "lucide-react";
 import Link from "next/link";
-import { gradingScale1to2, gradingScale3to6, semestersData } from "@/lib/data";
+import { gradingScale1to2, gradingScale3to6, semestersData, gradeDisplayLabels } from "@/lib/data";
 
 interface Student {
   uid: string;
@@ -31,6 +31,8 @@ export default function AdminPage() {
   const [studentGrades, setStudentGrades] = useState<any>(null);
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [currentSemesterId, setCurrentSemesterId] = useState(1);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -76,6 +78,7 @@ export default function AdminPage() {
   const handleStudentClick = async (student: Student) => {
     setSelectedStudent(student);
     setLoadingGrades(true);
+    setIsEditing(false);
     setStudentGrades(null);
     setCurrentSemesterId(1);
     try {
@@ -93,9 +96,57 @@ export default function AdminPage() {
     }
   };
 
+  const handleGradeChange = (semesterId: number, subjectCode: string, grade: string) => {
+    setStudentGrades((prev: any) => ({
+      ...prev,
+      grades: {
+        ...(prev?.grades || {}),
+        [semesterId]: {
+          ...(prev?.grades?.[semesterId] || {}),
+          [subjectCode]: grade,
+        },
+      },
+    }));
+  };
+
+  const handleSaveToCloud = async () => {
+    if (!selectedStudent || !studentGrades) return;
+    setIsSaving(true);
+    try {
+      await setDoc(doc(db, "grades", selectedStudent.uid), studentGrades, { merge: true });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving to cloud:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const calculateSgpa = (grades: any, semId: number) => {
+    if (!grades) return "0.00";
+    const sem = semestersData.find(s => s.id === semId);
+    if (!sem) return "0.00";
+    const scale = semId <= 2 ? gradingScale1to2 : gradingScale3to6;
+    const semGrades = grades[semId];
+    if (!semGrades) return "0.00";
+
+    let totalPoints = 0;
+    let totalCredits = 0;
+
+    sem.subjects.forEach((sub) => {
+      const grade = semGrades[sub.code];
+      if (grade && grade in scale) {
+        totalPoints += scale[grade] * sub.credit;
+        totalCredits += sub.credit;
+      }
+    });
+
+    return totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
+  };
+
   // Utility to calculate CGPA for a student to show in the UI
   const calculateCgpa = (grades: any) => {
-    if (!grades) return 0;
+    if (!grades) return "0.00";
     let totalPoints = 0;
     let totalCredits = 0;
 
@@ -144,14 +195,14 @@ export default function AdminPage() {
             </div>
             <Input
               type="text"
-              placeholder="Search by name, RedgNo, or email..."
+              placeholder="Search by name, RegNo, or email..."
               className="pl-10 bg-surface-soft border-hairline text-ink placeholder-muted"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <Card className="bg-surface-card h-[calc(100vh-200px)] overflow-y-auto">
+          <Card className="bg-surface-card max-h-64 lg:max-h-none lg:h-[calc(100vh-200px)] overflow-y-auto">
             <CardContent className="p-0 divide-y divide-hairline">
               {filteredStudents.length > 0 ? (
                 filteredStudents.map((student) => (
@@ -183,7 +234,7 @@ export default function AdminPage() {
           {selectedStudent ? (
             <Card className="bg-surface-card min-h-[calc(100vh-200px)]">
               <CardHeader className="border-b border-hairline bg-surface-soft/50">
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-4">
                   <div>
                     <CardTitle className="text-2xl text-ink font-serif italic mb-1">
                       {selectedStudent.displayName || "Unknown Student"}
@@ -201,11 +252,28 @@ export default function AdminPage() {
                     </div>
                   </div>
                   {studentGrades && (
-                    <div className="text-right">
+                    <div className="text-left sm:text-right flex flex-col sm:items-end w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t border-hairline sm:border-0">
                       <div className="text-xs uppercase tracking-wider text-muted font-semibold">Current CGPA</div>
-                      <div className="text-3xl font-bold text-primary title-display">
+                      <div className="text-3xl font-bold text-primary title-display mb-2">
                         {calculateCgpa(studentGrades.grades)}
                       </div>
+                      {isEditing ? (
+                        <Button 
+                          onClick={handleSaveToCloud} 
+                          disabled={isSaving}
+                          className="bg-primary hover:bg-primary-active text-white text-xs py-1 h-8 w-full sm:w-auto"
+                        >
+                          {isSaving ? "Saving..." : <><Save className="w-4 h-4 mr-1" /> Save Changes</>}
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={() => setIsEditing(true)} 
+                          variant="outline" 
+                          className="text-xs py-1 h-8 w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-white"
+                        >
+                          Edit Grades
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -215,9 +283,14 @@ export default function AdminPage() {
                   <div className="text-center py-12 text-muted">Loading grades...</div>
                 ) : studentGrades && Object.keys(studentGrades.grades || {}).length > 0 ? (
                   <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-6">
-                      <div>
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-hairline pb-6">
+                      <div className="flex items-baseline gap-4 w-full sm:w-auto">
                         <h3 className="text-xl font-medium title-display text-ink">Semester Grades</h3>
+                        {studentGrades && (
+                          <div className="text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
+                            SGPA: {calculateSgpa(studentGrades.grades, currentSemesterId)}
+                          </div>
+                        )}
                       </div>
                       <div className="w-full sm:w-48 shrink-0">
                         <select
@@ -236,8 +309,8 @@ export default function AdminPage() {
 
                     <div className="divide-y divide-hairline border border-hairline rounded-lg overflow-hidden bg-surface-card">
                       {semestersData.find(s => s.id === currentSemesterId)?.subjects.map((sub) => {
-                        const gradesObj = studentGrades.grades[currentSemesterId] || {};
-                        const grade = gradesObj[sub.code];
+                        const gradesObj = studentGrades.grades?.[currentSemesterId] || {};
+                        const grade = gradesObj[sub.code] || "";
                         const isBackCleared = grade && grade.endsWith("_BACK");
                         const displayGrade = grade ? grade.replace("_BACK", "") : "Not filled";
 
@@ -256,8 +329,22 @@ export default function AdminPage() {
                                 {sub.code} • {sub.credit} Credits
                               </div>
                             </div>
-                            <div className="shrink-0 flex items-center justify-end sm:w-32">
-                              {grade ? (
+                            <div className="shrink-0 flex items-center justify-end sm:w-48">
+                              {isEditing ? (
+                                <select
+                                  className="w-full px-2 py-1 border border-hairline rounded-md bg-surface-soft text-ink focus:outline-none text-sm font-bold"
+                                  value={grade}
+                                  onChange={(e) => handleGradeChange(currentSemesterId, sub.code, e.target.value)}
+                                >
+                                  <option value="">Select</option>
+                                  {(currentSemesterId <= 2 ? gradingScale1to2 : gradingScale3to6) &&
+                                    Object.keys(currentSemesterId <= 2 ? gradingScale1to2 : gradingScale3to6).map((g) => (
+                                      <option key={g} value={g}>
+                                        {gradeDisplayLabels[g] || g}
+                                      </option>
+                                    ))}
+                                </select>
+                              ) : grade ? (
                                 <div className="font-bold text-lg text-ink bg-surface-soft px-4 py-1 rounded-md border border-hairline">
                                   {displayGrade}
                                 </div>
