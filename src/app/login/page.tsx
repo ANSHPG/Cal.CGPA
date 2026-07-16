@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -35,6 +35,15 @@ export default function LoginPage() {
       }
 
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
+      
+      // Sync password to Firestore to keep Admin panel's plaintext view updated
+      // (This handles the case where they changed their password via reset link)
+      try {
+        const userRef = doc(db, "users", userCredential.user.uid);
+        await updateDoc(userRef, { password: password });
+      } catch (e) {
+        console.error("Failed to sync password to firestore", e);
+      }
 
       router.push("/");
     } catch (err: any) {
@@ -87,9 +96,16 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+                  Password
+                </label>
+                <div className="text-sm">
+                  <Link href="/forgot-password" className="font-medium text-[#d97757] hover:text-[#c66646]">
+                    Forgot password?
+                  </Link>
+                </div>
+              </div>
               <div className="mt-1">
                 <input
                   id="password"
