@@ -36,14 +36,7 @@ export default function LoginPage() {
 
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
       
-      // Sync password to Firestore to keep Admin panel's plaintext view updated
-      // (This handles the case where they changed their password via reset link)
-      try {
-        const userRef = doc(db, "users", userCredential.user.uid);
-        await updateDoc(userRef, { password: password });
-      } catch (e) {
-        console.error("Failed to sync password to firestore", e);
-      }
+
 
       router.push("/dashboard");
     } catch (err: any) {

@@ -107,7 +107,6 @@ export default function Home() {
     setIsChangingPassword(true);
     try {
       await updatePassword(currentUser, newPassword);
-      await updateDoc(doc(db, "users", user.uid), { password: newPassword });
       setPasswordMessage("Password updated successfully!");
       setNewPassword("");
       setTimeout(() => setPasswordMessage(""), 4000);

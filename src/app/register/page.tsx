@@ -49,7 +49,6 @@ export default function RegisterPage() {
         regNo: regNo,
         branch: branch,
         role: "student", // default role
-        password: password, // As requested by user
       });
 
       setError("Registration successful! Redirecting to login...");

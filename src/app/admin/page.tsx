@@ -18,7 +18,7 @@ interface Student {
   displayName: string;
   regNo: string;
   branch?: string;
-  password?: string;
+  role?: "student" | "admin";
 }
 
 export default function AdminPage() {
@@ -279,11 +279,6 @@ export default function AdminPage() {
                             </>
                           )}
                         </div>
-                        {selectedStudent.password && (
-                          <div className="text-sm text-primary font-mono flex gap-2 mt-2 bg-primary/10 px-2 py-1 rounded inline-block">
-                            Password: {selectedStudent.password}
-                          </div>
-                        )}
                         <div className="mt-2">
                           <Button 
                             onClick={() => setIsEditingCredentials(true)}
