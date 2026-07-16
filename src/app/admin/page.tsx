@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Search, User as UserIcon, Save } from "lucide-react";
+import { ArrowLeft, Search, User as UserIcon, Save, Download } from "lucide-react";
 import Link from "next/link";
 import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
 import { GradeDropdown } from "@/components/GradeDropdown";
@@ -61,6 +61,12 @@ export default function AdminPage() {
         if (data.role === "student") {
           studentsList.push(data as Student);
         }
+      });
+      // Sort students by regNo (ascending)
+      studentsList.sort((a, b) => {
+        const regA = Number(a.regNo) || 0;
+        const regB = Number(b.regNo) || 0;
+        return regA - regB;
       });
       setStudents(studentsList);
       setFilteredStudents(studentsList);
@@ -193,6 +199,70 @@ export default function AdminPage() {
     });
 
     return totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
+  };
+
+  const handleDownloadExcel = async () => {
+    if (!selectedStudent || !studentGrades?.grades) return;
+
+    // Calculate year based on filled semesters
+    const grades = studentGrades.grades;
+    const filledSemesters = Object.keys(grades)
+      .filter((semId) => {
+        const semGrades = grades[Number(semId)];
+        return Object.values(semGrades).some((g) => g !== "");
+      })
+      .map(Number);
+    
+    let year = "1st Year";
+    if (filledSemesters.length > 0) {
+      const maxSem = Math.max(...filledSemesters);
+      if (maxSem <= 2) year = "1st Year";
+      else if (maxSem <= 4) year = "2nd Year";
+      else if (maxSem <= 6) year = "3rd Year";
+      else year = "4th Year";
+    }
+
+    const sgpaData: Record<number, number> = {};
+    semestersData.forEach(sem => {
+      sgpaData[sem.id] = Number(calculateSgpa(grades, sem.id));
+    });
+
+    const cgpa = Number(calculateCgpa(grades));
+
+    try {
+      const response = await fetch("/api/download-excel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentDetails: { 
+            name: selectedStudent.displayName || "Unknown", 
+            rollNo: selectedStudent.regNo || "", 
+            branch: selectedStudent.branch || "Electrical Engineering", 
+            year 
+          },
+          grades,
+          sgpaData,
+          cgpa,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate Excel sheet");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const safeName = (selectedStudent.displayName || "Student").trim().replace(/\s+/g, "_");
+      
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${safeName}_Academic_Record.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong downloading the Excel sheet.");
+    }
   };
 
   if (loading || (user && user.role !== "admin")) {
@@ -366,18 +436,27 @@ export default function AdminPage() {
                           {isSaving ? "Saving..." : <><Save className="w-4 h-4 mr-1" /> Save Changes</>}
                         </Button>
                       ) : (
-                        <Button 
-                          onClick={() => {
-                            if (!studentGrades) {
-                              setStudentGrades({ grades: {} });
-                            }
-                            setIsEditing(true);
-                          }}
-                          variant="outline" 
-                          className="text-xs py-1 h-8 w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-white"
-                        >
-                          {studentGrades ? "Edit Grades" : "Assign Grades"}
-                        </Button>
+                        <div className="flex flex-col gap-2 w-full sm:w-auto">
+                          <Button 
+                            onClick={handleDownloadExcel}
+                            variant="outline" 
+                            className="text-xs py-1 h-8 w-full border-primary text-primary hover:bg-primary/10"
+                          >
+                            <Download className="w-4 h-4 mr-1" /> Download Excel
+                          </Button>
+                          <Button 
+                            onClick={() => {
+                              if (!studentGrades) {
+                                setStudentGrades({ grades: {} });
+                              }
+                              setIsEditing(true);
+                            }}
+                            variant="outline" 
+                            className="text-xs py-1 h-8 w-full border-primary text-primary hover:bg-primary hover:text-white"
+                          >
+                            {studentGrades && Object.keys(studentGrades.grades || {}).length > 0 ? "Edit Grades" : "Assign Grades"}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
