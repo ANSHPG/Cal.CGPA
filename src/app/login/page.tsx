@@ -35,12 +35,6 @@ export default function LoginPage() {
       }
 
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
-      
-      // Check if email is verified
-      if (!userCredential.user.emailVerified) {
-        await auth.signOut();
-        throw new Error("Please verify your email address. Check your inbox for the verification link.");
-      }
 
       router.push("/");
     } catch (err: any) {

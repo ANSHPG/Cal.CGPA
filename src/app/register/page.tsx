@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -21,7 +21,23 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    
+    const reputableDomains = ["gmail.com", "hotmail.com", "yahoo.com", "outlook.com", "icloud.com"];
+    const domain = email.split('@')[1];
+    if (!domain || !reputableDomains.includes(domain.toLowerCase())) {
+      setError("Please use a reputable email provider (e.g., gmail.com, hotmail.com, yahoo.com).");
+      return;
+    }
+
     try {
+      // Check if regNo already exists
+      const q = query(collection(db, "users"), where("regNo", "==", regNo));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        setError("Caution: Roll number is already registered.");
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -36,11 +52,9 @@ export default function RegisterPage() {
         password: password, // As requested by user
       });
 
-      await sendEmailVerification(user);
-      setError("Registration successful! Please check your email to verify your account before logging in.");
+      setError("Registration successful! Redirecting to login...");
       
-      // Delay redirect or rely on user to check email
-      setTimeout(() => router.push("/login"), 5000);
+      setTimeout(() => router.push("/login"), 2000);
     } catch (err: any) {
       setError(err.message || "Failed to register.");
     }

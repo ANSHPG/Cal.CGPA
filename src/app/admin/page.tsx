@@ -34,6 +34,10 @@ export default function AdminPage() {
   const [currentSemesterId, setCurrentSemesterId] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [isEditingCredentials, setIsEditingCredentials] = useState(false);
+  const [isSavingCredentials, setIsSavingCredentials] = useState(false);
+  const [editCreds, setEditCreds] = useState({ displayName: "", regNo: "", email: "", branch: "" });
 
   useEffect(() => {
     if (!loading) {
@@ -80,6 +84,13 @@ export default function AdminPage() {
     setSelectedStudent(student);
     setLoadingGrades(true);
     setIsEditing(false);
+    setIsEditingCredentials(false);
+    setEditCreds({
+      displayName: student.displayName || "",
+      regNo: student.regNo || "",
+      email: student.email || "",
+      branch: student.branch || "Electrical Engineering"
+    });
     setStudentGrades(null);
     setCurrentSemesterId(1);
     try {
@@ -120,6 +131,21 @@ export default function AdminPage() {
       console.error("Error saving to cloud:", error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveCredentials = async () => {
+    if (!selectedStudent) return;
+    setIsSavingCredentials(true);
+    try {
+      await setDoc(doc(db, "users", selectedStudent.uid), editCreds, { merge: true });
+      setSelectedStudent({ ...selectedStudent, ...editCreds });
+      setIsEditingCredentials(false);
+      setStudents(students.map(s => s.uid === selectedStudent.uid ? { ...s, ...editCreds } : s));
+    } catch (error) {
+      console.error("Error saving credentials:", error);
+    } finally {
+      setIsSavingCredentials(false);
     }
   };
 
@@ -236,24 +262,93 @@ export default function AdminPage() {
             <Card className="bg-surface-card min-h-[calc(100vh-200px)]">
               <CardHeader className="border-b border-hairline bg-surface-soft/50">
                 <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-4">
-                  <div>
-                    <CardTitle className="text-2xl text-ink font-serif italic mb-1">
-                      {selectedStudent.displayName || "Unknown Student"}
-                    </CardTitle>
-                    <div className="text-sm text-muted font-mono flex gap-4 mt-2">
-                      <span>{selectedStudent.regNo || "No RegNo"}</span>
-                      <span>•</span>
-                      <span>{selectedStudent.email}</span>
-                      {selectedStudent.branch && (
-                        <>
+                  <div className="flex-1 w-full sm:w-auto">
+                    {!isEditingCredentials ? (
+                      <>
+                        <CardTitle className="text-2xl text-ink font-serif italic mb-1">
+                          {selectedStudent.displayName || "Unknown Student"}
+                        </CardTitle>
+                        <div className="text-sm text-muted font-mono flex flex-wrap gap-4 mt-2">
+                          <span>{selectedStudent.regNo || "No RegNo"}</span>
                           <span>•</span>
-                          <span>{selectedStudent.branch}</span>
-                        </>
-                      )}
-                    </div>
-                    {selectedStudent.password && (
-                      <div className="text-sm text-primary font-mono flex gap-2 mt-2 bg-primary/10 px-2 py-1 rounded inline-block">
-                        Password: {selectedStudent.password}
+                          <span className="truncate">{selectedStudent.email}</span>
+                          {selectedStudent.branch && (
+                            <>
+                              <span>•</span>
+                              <span>{selectedStudent.branch}</span>
+                            </>
+                          )}
+                        </div>
+                        {selectedStudent.password && (
+                          <div className="text-sm text-primary font-mono flex gap-2 mt-2 bg-primary/10 px-2 py-1 rounded inline-block">
+                            Password: {selectedStudent.password}
+                          </div>
+                        )}
+                        <div className="mt-2">
+                          <Button 
+                            onClick={() => setIsEditingCredentials(true)}
+                            variant="ghost" 
+                            size="sm"
+                            className="text-xs text-primary hover:text-primary-active h-6 px-2 -ml-2"
+                          >
+                            Edit Credentials
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-3 bg-surface-soft p-4 rounded-md border border-hairline w-full max-w-sm">
+                        <div>
+                          <label className="text-xs text-muted">Name</label>
+                          <Input 
+                            value={editCreds.displayName} 
+                            onChange={e => setEditCreds({...editCreds, displayName: e.target.value})}
+                            className="h-8 text-sm bg-surface-card"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted">RegNo</label>
+                          <Input 
+                            value={editCreds.regNo} 
+                            onChange={e => setEditCreds({...editCreds, regNo: e.target.value})}
+                            className="h-8 text-sm bg-surface-card"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted">Email (Display Only)</label>
+                          <Input 
+                            value={editCreds.email} 
+                            onChange={e => setEditCreds({...editCreds, email: e.target.value})}
+                            className="h-8 text-sm bg-surface-card"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted">Branch</label>
+                          <select 
+                            value={editCreds.branch} 
+                            onChange={e => setEditCreds({...editCreds, branch: e.target.value})}
+                            className="w-full h-8 text-sm border border-hairline bg-surface-card rounded px-2 text-ink focus:outline-none"
+                          >
+                            <option value="Electrical Engineering">Electrical Engineering</option>
+                          </select>
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <Button 
+                            onClick={handleSaveCredentials} 
+                            disabled={isSavingCredentials}
+                            size="sm"
+                            className="h-8 text-xs bg-primary hover:bg-primary-active text-white flex-1"
+                          >
+                            {isSavingCredentials ? "Saving..." : "Save Credentials"}
+                          </Button>
+                          <Button 
+                            onClick={() => setIsEditingCredentials(false)}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
