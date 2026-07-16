@@ -390,12 +390,22 @@ export default function Home() {
                   ) : (
                     <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-rose-500/10 text-rose-600 border border-rose-500/20">Missing</span>
                   )}
+                  {!hasPasswordProvider && (
+                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">No Assigned Password</span>
+                  )}
                 </CardTitle>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="border-hairline h-8"
-                  onClick={() => setIsEditingDetails(!isEditingDetails)}
+                  onClick={() => {
+                    if (isEditingDetails) {
+                      setIsEditingDetails(false);
+                      handleSaveToCloud();
+                    } else {
+                      setIsEditingDetails(true);
+                    }
+                  }}
                 >
                   {isEditingDetails ? "Lock Details" : "Edit Details"}
                 </Button>
