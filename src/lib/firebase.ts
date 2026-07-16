@@ -14,8 +14,16 @@ const firebaseConfig = {
 // Initialize Firebase only if it hasn't been initialized already (important for Next.js SSR)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-const auth = getAuth(app);
-const db = getFirestore(app);
+// To prevent Next.js build errors when env vars are missing during prerendering
+let auth: any = null;
+let db: any = null;
 const googleProvider = new GoogleAuthProvider();
+
+try {
+  auth = getAuth(app);
+  db = getFirestore(app);
+} catch (error) {
+  console.warn("Firebase Auth/DB initialization failed (likely missing env vars during build).");
+}
 
 export { app, auth, db, googleProvider };
