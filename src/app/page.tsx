@@ -91,7 +91,7 @@ export default function Home() {
     );
   }
 
-  if (!user) return <LandingPage />;
+
 
   const handleDetailChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setStudentDetails((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -304,6 +304,8 @@ export default function Home() {
 
     return {};
   };
+
+  if (!user) return <LandingPage />;
 
   return (
     <div className="min-h-screen bg-canvas text-body font-sans">
