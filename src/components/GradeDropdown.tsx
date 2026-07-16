@@ -9,11 +9,23 @@ interface GradeDropdownProps {
 }
 
 const getOptionStyle = (g: string) => {
-  if (g.startsWith("O")) return { backgroundColor: "#dcfce7", color: "#166534" }; // emerald
-  if (g.startsWith("E") || g.startsWith("A")) return { backgroundColor: "#dbeafe", color: "#1e40af" }; // blue
-  if (g.startsWith("B") || g.startsWith("C")) return { backgroundColor: "#fef9c3", color: "#854d0e" }; // yellow
-  if (g.startsWith("D") || g.startsWith("P")) return { backgroundColor: "#ffedd5", color: "#9a3412" }; // orange
-  if (["F", "SA", "M", "F_BACK", "SA_BACK", "M_BACK"].includes(g)) return { backgroundColor: "#fee2e2", color: "#991b1b" }; // red
+  if (g === "O") return { backgroundColor: "#1e3a1e", color: "#6ee7b7" };
+  if (g === "E") return { backgroundColor: "#143a2e", color: "#34d399" };
+  if (g === "A") return { backgroundColor: "#063d3b", color: "#2dd4bf" };
+  if (g === "B") return { backgroundColor: "#1e3b4a", color: "#38bdf8" };
+  if (g === "C") return { backgroundColor: "#2e2e48", color: "#818cf8" };
+  if (g === "D") return { backgroundColor: "#3a2a45", color: "#c084fc" };
+  if (g === "F") return { backgroundColor: "#451e1e", color: "#f87171" };
+  if (g === "SA" || g === "M") return { backgroundColor: "#2a2a2a", color: "#a1a1aa" };
+  if (g === "O_BACK") return { backgroundColor: "#45241e", color: "#fca5a5" };
+  if (g === "A_BACK") return { backgroundColor: "#3f2b1d", color: "#fed7aa" };
+  if (g === "B_BACK") return { backgroundColor: "#372e1c", color: "#fef08a" };
+  if (g === "C_BACK") return { backgroundColor: "#2e311b", color: "#d9f99d" };
+  if (g === "D_BACK") return { backgroundColor: "#22351f", color: "#bbf7d0" };
+  if (g === "P_BACK") return { backgroundColor: "#1d352d", color: "#99f6e4" };
+  if (g === "F_BACK") return { backgroundColor: "#3f1c1c", color: "#fca5a5" };
+  if (g === "SA_BACK" || g === "M_BACK") return { backgroundColor: "#242424", color: "#d4d4d8" };
+  if (g === "P") return { backgroundColor: "#3f3f2a", color: "#eab308" };
   return {};
 };
 
