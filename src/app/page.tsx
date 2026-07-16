@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { pdf } from "@react-pdf/renderer";
-import { Download, ChevronRight, ChevronLeft, AlertCircle } from "lucide-react";
+import { Download, ChevronRight, ChevronLeft, AlertCircle, Save, LogOut, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +10,16 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
 import { GradeSheetPDF } from "@/components/GradeSheetPDF";
+import { useAuth } from "@/components/AuthContext";
+import { useRouter } from "next/navigation";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import Link from "next/link";
 
 export default function Home() {
+  const { user, loading, signOut } = useAuth();
+  const router = useRouter();
+
   const [studentDetails, setStudentDetails] = useState({
     name: "",
     rollNo: "",
@@ -22,6 +30,69 @@ export default function Home() {
   const [currentSemesterId, setCurrentSemesterId] = useState(1);
   const [pdfTheme, setPdfTheme] = useState<"light" | "dark">("light");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      if (user) {
+        setStudentDetails((prev) => ({
+          ...prev,
+          name: user.displayName || prev.name,
+          rollNo: user.regNo || prev.rollNo,
+        }));
+
+        try {
+          const docRef = doc(db, "grades", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.grades) setGrades(data.grades);
+            if (data.studentDetails) setStudentDetails(data.studentDetails);
+          }
+        } catch (error) {
+          console.error("Error fetching grades:", error);
+        }
+      }
+    }
+    fetchData();
+  }, [user]);
+
+  const handleSaveToCloud = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    setSaveMessage("");
+    try {
+      await setDoc(doc(db, "grades", user.uid), {
+        studentDetails,
+        grades,
+        updatedAt: new Date().toISOString(),
+      });
+      setSaveMessage("Progress saved successfully!");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error("Error saving to cloud:", error);
+      setSaveMessage("Failed to save progress.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
+        <div className="text-[#E0E0E0] text-xl font-serif italic">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) return null; // Avoid flashing unauthenticated content
 
   const handleDetailChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setStudentDetails((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -237,9 +308,22 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-canvas text-body font-sans">
-      <header className="h-16 border-b border-hairline flex items-center px-6 md:px-12 sticky top-0 z-10 bg-canvas/80 backdrop-blur-md">
+      <header className="h-16 border-b border-hairline flex items-center justify-between px-6 md:px-12 sticky top-0 z-10 bg-canvas/80 backdrop-blur-md">
         <div className="font-medium text-xl text-ink title-display italic">
           Cal.CGPA
+        </div>
+        <div className="flex items-center gap-4">
+          {user?.role === "admin" && (
+            <Link href="/admin" className="text-sm font-medium text-primary hover:text-primary/80 flex items-center gap-1">
+              <ShieldAlert className="w-4 h-4" /> Admin Panel
+            </Link>
+          )}
+          <div className="text-sm text-muted hidden sm:block">
+            {user?.email}
+          </div>
+          <Button variant="outline" size="sm" onClick={signOut} className="border-hairline text-xs py-1 h-8">
+            <LogOut className="w-3 h-3 mr-2" /> Sign out
+          </Button>
         </div>
       </header>
 
@@ -441,6 +525,17 @@ export default function Home() {
                 </div>
                 
                 <div className="w-full space-y-3">
+                  <Button size="lg" className="w-full font-bold tracking-wide shadow-md bg-[#2A2A2A] hover:bg-[#333333] text-white border border-[#404040]" onClick={handleSaveToCloud} disabled={isSaving}>
+                    <Save className="mr-2 h-5 w-5" />
+                    {isSaving ? "Saving..." : "Save Progress to Cloud"}
+                  </Button>
+                  
+                  {saveMessage && (
+                    <div className="text-sm text-center font-medium" style={{ color: saveMessage.includes("success") ? "#34d399" : "#fca5a5" }}>
+                      {saveMessage}
+                    </div>
+                  )}
+
                   <Button size="lg" className="w-full font-bold tracking-wide shadow-md" onClick={handleDownload}>
                     <Download className="mr-2 h-5 w-5" />
                     Download Grade Sheet (PDF)
