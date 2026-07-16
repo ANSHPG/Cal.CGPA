@@ -53,7 +53,12 @@ export function GradeDropdown({ value, onChange, semesterId }: GradeDropdownProp
   };
 
   const renderOption = (g: string, isBack = false) => {
-    const label = gradeDisplayLabels[g] || (semesterId > 2 ? `${g} (${gradingScale3to6[g]} pts)` : g);
+    let label = g;
+    if (semesterId > 2) {
+      label = `${g} (${gradingScale3to6[g]} pts)`;
+    } else {
+      label = gradeDisplayLabels[g] || g;
+    }
     const isSelected = value === g;
     return (
       <div
@@ -83,15 +88,15 @@ export function GradeDropdown({ value, onChange, semesterId }: GradeDropdownProp
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-surface-card border border-hairline rounded-md shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-surface-card border border-hairline rounded-md shadow-lg max-h-64 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {semesterId <= 2 ? (
             <>
-              <div className="px-3 py-1.5 text-xs font-semibold text-muted bg-surface-soft uppercase tracking-wider sticky top-0">
+              <div className="px-3 py-1.5 text-xs font-semibold text-muted bg-surface-soft uppercase tracking-wider">
                 Old Scheme (Original)
               </div>
               {oldScheme.map((g) => renderOption(g))}
               
-              <div className="px-3 py-1.5 text-xs font-semibold text-muted bg-surface-soft uppercase tracking-wider sticky top-[28px]">
+              <div className="px-3 py-1.5 text-xs font-semibold text-muted bg-surface-soft uppercase tracking-wider">
                 New Scheme / Back Paper Cleared
               </div>
               {oldSchemeBack.map((g) => renderOption(g, true))}
