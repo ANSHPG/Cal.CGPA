@@ -80,18 +80,30 @@ export function LandingPage() {
               </div>
               <div className="flex mb-1">
                 <span className="w-8 text-right mr-4 text-[#a09d96] opacity-50">3</span>
-                <span className="text-[#5db8a6] ml-8">institution:</span> <span className="text-[#e8a55a] ml-2">"Global University"</span>,
+                <span className="text-[#5db8a6] ml-8">institution:</span> <span className="text-[#e8a55a] ml-2">"Odisha University of Technology and Research"</span>,
               </div>
               <div className="flex mb-1">
                 <span className="w-8 text-right mr-4 text-[#a09d96] opacity-50">4</span>
-                <span className="text-[#5db8a6] ml-8">status:</span> <span className="text-[#e8a55a] ml-2">"Active"</span>
+                <span className="text-[#5db8a6] ml-8">name:</span> <span className="text-[#e8a55a] ml-2">"Anshuman"</span>,
               </div>
-              <div className="flex mb-4">
+              <div className="flex mb-1">
                 <span className="w-8 text-right mr-4 text-[#a09d96] opacity-50">5</span>
-                <span>{`};`}</span>
+                <span className="text-[#5db8a6] ml-8">username:</span> <span className="text-[#e8a55a] ml-2">"Murphy"</span>,
               </div>
               <div className="flex mb-1">
                 <span className="w-8 text-right mr-4 text-[#a09d96] opacity-50">6</span>
+                <span className="text-[#5db8a6] ml-8">remark:</span> <span className="text-[#e8a55a] ml-2">"go for it"</span>,
+              </div>
+              <div className="flex mb-1">
+                <span className="w-8 text-right mr-4 text-[#a09d96] opacity-50">7</span>
+                <span className="text-[#5db8a6] ml-8">status:</span> <span className="text-[#e8a55a] ml-2">"Active"</span>
+              </div>
+              <div className="flex mb-4">
+                <span className="w-8 text-right mr-4 text-[#a09d96] opacity-50">8</span>
+                <span>{`};`}</span>
+              </div>
+              <div className="flex mb-1">
+                <span className="w-8 text-right mr-4 text-[#a09d96] opacity-50">9</span>
                 <span className="text-[#a09d96]">System.calculateCGPA(student);</span>
               </div>
               <div className="flex mt-4 pt-4 border-t border-[#252320]">
