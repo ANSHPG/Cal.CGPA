@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import * as admin from "firebase-admin";
+import { getApps, initializeApp, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 
 // Initialize Firebase Admin App if not already initialized
-if (!admin.apps.length) {
+if (!getApps().length) {
   try {
     let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY || "";
     // If the key comes surrounded by quotes from Vercel, strip them
@@ -12,8 +14,8 @@ if (!admin.apps.length) {
     privateKey = privateKey.replace(/\\n/g, '\n');
 
     if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && process.env.FIREBASE_ADMIN_CLIENT_EMAIL && privateKey) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
+      initializeApp({
+        credential: cert({
           projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
           clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
           privateKey,
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
     }
 
     // Verify admin SDK is initialized properly
-    if (!admin.apps.length) {
+    if (!getApps().length) {
       console.error("Firebase Admin credentials not set or invalid.");
       return NextResponse.json(
         { error: "Server configuration error: Invalid Firebase Admin credentials." },
@@ -45,11 +47,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // Delete the user from Firebase Authentication
-    await admin.auth().deleteUser(uid);
+    // Delete the user from Firebase Authentication, but ignore if they are already deleted
+    try {
+      await getAuth().deleteUser(uid);
+    } catch (authError: any) {
+      if (authError.code !== 'auth/user-not-found') {
+        throw authError; // Rethrow if it's a real error like missing permissions
+      }
+      console.log(`User ${uid} not found in Auth. Proceeding to clean up Firestore.`);
+    }
 
     // Delete the user from Firestore using Admin SDK to bypass security rules
-    const db = admin.firestore();
+    const db = getFirestore();
     await db.collection("users").doc(uid).delete();
     await db.collection("grades").doc(uid).delete();
 
