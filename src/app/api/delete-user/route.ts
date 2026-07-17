@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import { getApps, initializeApp, cert } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-
-import { getFirestore } from "firebase-admin/firestore";
+import * as admin from "firebase-admin";
 
 // Initialize Firebase Admin App if not already initialized
-if (!getApps().length) {
+if (!admin.apps.length) {
   try {
     let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY || "";
     // If the key comes surrounded by quotes from Vercel, strip them
@@ -15,8 +12,8 @@ if (!getApps().length) {
     privateKey = privateKey.replace(/\\n/g, '\n');
 
     if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && process.env.FIREBASE_ADMIN_CLIENT_EMAIL && privateKey) {
-      initializeApp({
-        credential: cert({
+      admin.initializeApp({
+        credential: admin.credential.cert({
           projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
           clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
           privateKey,
@@ -40,7 +37,7 @@ export async function POST(request: Request) {
     }
 
     // Verify admin SDK is initialized properly
-    if (!getApps().length) {
+    if (!admin.apps.length) {
       console.error("Firebase Admin credentials not set or invalid.");
       return NextResponse.json(
         { error: "Server configuration error: Invalid Firebase Admin credentials." },
@@ -49,10 +46,10 @@ export async function POST(request: Request) {
     }
 
     // Delete the user from Firebase Authentication
-    await getAuth().deleteUser(uid);
+    await admin.auth().deleteUser(uid);
 
     // Delete the user from Firestore using Admin SDK to bypass security rules
-    const db = getFirestore();
+    const db = admin.firestore();
     await db.collection("users").doc(uid).delete();
     await db.collection("grades").doc(uid).delete();
 
