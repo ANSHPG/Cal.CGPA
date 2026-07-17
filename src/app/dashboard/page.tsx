@@ -100,11 +100,12 @@ export default function Home() {
         updatedAt: new Date().toISOString(),
       });
       // Ensure details sync to the users collection for the Admin panel and future logins
-      await updateDoc(doc(db, "users", user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         displayName: studentDetails.name,
         regNo: studentDetails.rollNo,
-        branch: studentDetails.branch
-      });
+        branch: studentDetails.branch,
+        email: user.email // ensure email is set if it was missing
+      }, { merge: true });
       setSaveMessage("Progress saved to cloud!");
       setTimeout(() => setSaveMessage(""), 3000);
       return true;
