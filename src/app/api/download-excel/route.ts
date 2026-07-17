@@ -42,22 +42,18 @@ export async function POST(request: Request) {
     });
     const filledBaseSems = new Set(filledSems.map((sem) => sem.baseSem || sem.id));
 
-    // Delete unused semester sheets
-    [1, 2, 3, 4, 5, 6].forEach((baseId) => {
-      if (!filledBaseSems.has(baseId)) {
-        const sheet = workbook.getWorksheet(`Semester ${baseId}`);
-        if (sheet) {
-          workbook.removeWorksheet(sheet.id);
-        }
-      }
-    });
-
     // 2. Populate Semester Sheets
     filledSems.forEach((sem) => {
       const baseId = sem.baseSem || sem.id;
-      const sheetName = `Semester ${baseId}`;
-      const sheet = workbook.getWorksheet(sheetName);
-      if (!sheet) return;
+      const templateSheet = workbook.getWorksheet(`Semester ${baseId}`);
+      if (!templateSheet) return;
+
+      // Clone the template sheet for this specific semester
+      const safeSheetName = sem.label.replace(/[:\\/?*\[\]]/g, "_").substring(0, 31);
+      const sheet = workbook.addWorksheet(safeSheetName);
+      const model = JSON.parse(JSON.stringify(templateSheet.model));
+      model.name = safeSheetName;
+      sheet.model = model;
 
       const semGrades = grades[sem.id] || {};
 
@@ -115,6 +111,14 @@ export async function POST(request: Request) {
       // Write Total Credits & SGPA in Column E (5)
       sheet.getCell(totalCreditsRow, 5).value = totalCredits;
       sheet.getCell(sgpaRow, 5).value = Number(sgpa.toFixed(2));
+    });
+
+    // Delete the original generic template sheets
+    [1, 2, 3, 4, 5, 6].forEach((baseId) => {
+      const templateSheet = workbook.getWorksheet(`Semester ${baseId}`);
+      if (templateSheet) {
+        workbook.removeWorksheet(templateSheet.id);
+      }
     });
 
     // Write to buffer
