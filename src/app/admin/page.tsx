@@ -189,9 +189,9 @@ export default function AdminPage() {
         setFilteredStudents(newStudents);
         setSelectedStudent(null);
         setStudentGrades(null);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting student data:", error);
-        alert("Failed to delete student data.");
+        alert(`Failed to delete student data: ${error.message || "Unknown error"}`);
       }
     }
   };
