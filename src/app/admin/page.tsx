@@ -167,11 +167,7 @@ export default function AdminPage() {
     
     if (confirm(`Are you sure you want to permanently delete all data for ${selectedStudent.displayName || selectedStudent.email}? This cannot be undone.`)) {
       try {
-        // Delete from Firestore
-        await deleteDoc(doc(db, "users", selectedStudent.uid));
-        await deleteDoc(doc(db, "grades", selectedStudent.uid));
-        
-        // Delete from Authentication via our new API route
+        // Delete from Authentication and Firestore via our new backend API route
         const response = await fetch("/api/delete-user", {
           method: "POST",
           headers: {
@@ -182,11 +178,10 @@ export default function AdminPage() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          console.error("Failed to delete from Auth:", errorData.error);
-          alert(`Deleted from Firestore, but failed to delete from Auth: ${errorData.error}`);
-        } else {
-          alert("User data has been completely deleted from Firestore and Authentication.");
+          throw new Error(errorData.error || "Failed to delete user from Authentication");
         }
+        
+        alert("User data has been completely deleted from Firestore and Authentication.");
         
         // Remove from local state
         const newStudents = students.filter(s => s.uid !== selectedStudent.uid);

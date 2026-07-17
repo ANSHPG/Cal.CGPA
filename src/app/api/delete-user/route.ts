@@ -2,10 +2,18 @@ import { NextResponse } from "next/server";
 import { getApps, initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 
+import { getFirestore } from "firebase-admin/firestore";
+
 // Initialize Firebase Admin App if not already initialized
 if (!getApps().length) {
   try {
-    const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY || "";
+    // If the key comes surrounded by quotes from Vercel, strip them
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.substring(1, privateKey.length - 1);
+    }
+    privateKey = privateKey.replace(/\\n/g, '\n');
+
     if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && process.env.FIREBASE_ADMIN_CLIENT_EMAIL && privateKey) {
       initializeApp({
         credential: cert({
@@ -32,10 +40,10 @@ export async function POST(request: Request) {
     }
 
     // Verify admin SDK is initialized properly
-    if (!process.env.FIREBASE_ADMIN_CLIENT_EMAIL || !process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-      console.error("Firebase Admin credentials not set.");
+    if (!getApps().length) {
+      console.error("Firebase Admin credentials not set or invalid.");
       return NextResponse.json(
-        { error: "Server configuration error: Missing Firebase Admin credentials." },
+        { error: "Server configuration error: Invalid Firebase Admin credentials." },
         { status: 500 }
       );
     }
@@ -43,7 +51,12 @@ export async function POST(request: Request) {
     // Delete the user from Firebase Authentication
     await getAuth().deleteUser(uid);
 
-    return NextResponse.json({ message: "User deleted successfully from Authentication" }, { status: 200 });
+    // Delete the user from Firestore using Admin SDK to bypass security rules
+    const db = getFirestore();
+    await db.collection("users").doc(uid).delete();
+    await db.collection("grades").doc(uid).delete();
+
+    return NextResponse.json({ message: "User deleted successfully from Authentication and Firestore" }, { status: 200 });
   } catch (error: any) {
     console.error("Error deleting user from Auth:", error);
     return NextResponse.json(
