@@ -84,6 +84,27 @@ export default function Home() {
         return false;
       }
 
+      // Check for missing subjects in partially filled semesters
+      for (const semIdStr of Object.keys(grades)) {
+        const semId = Number(semIdStr);
+        const semGrades = grades[semId] || {};
+        
+        // If the semester is completely empty, it's fine (they haven't started it)
+        const hasAnyGrade = Object.values(semGrades).some((g) => g !== "");
+        if (!hasAnyGrade) continue;
+
+        const semData = semestersData.find((s) => s.id === semId);
+        if (!semData) continue;
+
+        const missingSubjects = semData.subjects.filter((sub) => !semGrades[sub.code]);
+        if (missingSubjects.length > 0) {
+          const subjectNames = missingSubjects.map((s) => s.name).join(", ");
+          setSaveMessage(`Error: Missing grades in ${semData.label} for: ${subjectNames}`);
+          setIsSaving(false);
+          return false;
+        }
+      }
+
       // Check if regNo already exists on another account
       const q = query(collection(db, "users"), where("regNo", "==", studentDetails.rollNo));
       const querySnapshot = await getDocs(q);
