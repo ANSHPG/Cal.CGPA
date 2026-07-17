@@ -57,6 +57,11 @@ export async function POST(request: Request) {
 
       const semGrades = grades[sem.id] || {};
 
+      // Set the proper heading and give it enough row height to fit long text (e.g. old courses)
+      sheet.getCell("A1").value = `${sem.label} Grade Sheet`;
+      sheet.getRow(1).height = 40;
+      sheet.getCell("A1").alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
       // Find Total Credits and SGPA rows dynamically based on the template
       let totalCreditsRow = 16; // default fallback
       for (let r = 4; r <= 30; r++) {
