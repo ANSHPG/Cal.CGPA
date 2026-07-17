@@ -84,24 +84,20 @@ export default function Home() {
         return false;
       }
 
-      // Check for missing subjects in partially filled semesters
-      for (const semIdStr of Object.keys(grades)) {
-        const semId = Number(semIdStr);
-        const semGrades = grades[semId] || {};
-        
-        // If the semester is completely empty, it's fine (they haven't started it)
-        const hasAnyGrade = Object.values(semGrades).some((g) => g !== "");
-        if (!hasAnyGrade) continue;
-
-        const semData = semestersData.find((s) => s.id === semId);
-        if (!semData) continue;
-
-        const missingSubjects = semData.subjects.filter((sub) => !semGrades[sub.code]);
-        if (missingSubjects.length > 0) {
-          const subjectNames = missingSubjects.map((s) => s.name).join(", ");
-          setSaveMessage(`Error: Missing grades in ${semData.label} for: ${subjectNames}`);
-          setIsSaving(false);
-          return false;
+      // Check for missing subjects in the currently viewed semester only
+      const currentSemGrades = grades[currentSemesterId] || {};
+      const hasAnyGradeInCurrent = Object.values(currentSemGrades).some((g) => g !== "");
+      
+      if (hasAnyGradeInCurrent) {
+        const currentSemData = semestersData.find((s) => s.id === currentSemesterId);
+        if (currentSemData) {
+          const missingSubjects = currentSemData.subjects.filter((sub) => !currentSemGrades[sub.code]);
+          if (missingSubjects.length > 0) {
+            const subjectNames = missingSubjects.map((s) => s.name).join(", ");
+            setSaveMessage(`Error: Missing grades in ${currentSemData.label} for: ${subjectNames}`);
+            setIsSaving(false);
+            return false;
+          }
         }
       }
 
