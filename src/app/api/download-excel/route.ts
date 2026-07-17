@@ -74,12 +74,11 @@ export async function POST(request: Request) {
 
       // Clear all existing subject rows in the template before writing
       for (let r = 4; r < totalCreditsRow; r++) {
-        sheet.getCell(r, 1).value = ""; // A
-        sheet.getCell(r, 2).value = ""; // B (Sl. No.)
-        sheet.getCell(r, 3).value = ""; // C (Code)
-        sheet.getCell(r, 4).value = ""; // D (Name)
-        sheet.getCell(r, 5).value = ""; // E (Credits)
-        sheet.getCell(r, 6).value = ""; // F (Grade) - wait, column index starts at 1, but we found Grade is at column 5 previously. Wait!
+        sheet.getCell(r, 1).value = ""; // A (Sl. No.)
+        sheet.getCell(r, 2).value = ""; // B (Code)
+        sheet.getCell(r, 3).value = ""; // C (Name)
+        sheet.getCell(r, 4).value = ""; // D (Credits)
+        sheet.getCell(r, 5).value = ""; // E (Grade)
       }
 
       sem.subjects.forEach((sub, idx) => {
@@ -90,15 +89,15 @@ export async function POST(request: Request) {
         const baseGrade = isBack ? gradeKey.replace("_BACK", "") : gradeKey;
 
         // Write Subject Details
-        sheet.getCell(rowNum, 2).value = idx + 1; // Sl. No. (Column B)
-        sheet.getCell(rowNum, 3).value = sub.code; // Subject Code (Column C)
+        sheet.getCell(rowNum, 1).value = idx + 1; // Sl. No. (Column A)
+        sheet.getCell(rowNum, 2).value = sub.code; // Subject Code (Column B)
         
-        const nameCell = sheet.getCell(rowNum, 4); // Subject Name (Column D)
+        const nameCell = sheet.getCell(rowNum, 3); // Subject Name (Column C)
         nameCell.value = sub.name;
         
-        sheet.getCell(rowNum, 5).value = sub.credit; // Credits (Column E)
+        sheet.getCell(rowNum, 4).value = sub.credit; // Credits (Column D)
         
-        const gradeCell = sheet.getCell(rowNum, 6); // Grade (Column F)
+        const gradeCell = sheet.getCell(rowNum, 5); // Grade (Column E)
         gradeCell.value = baseGrade || "";
 
         if (isBack && baseGrade) {
@@ -113,13 +112,9 @@ export async function POST(request: Request) {
       const sgpa = sgpaData[sem.id] || 0;
       const totalCredits = sem.subjects.reduce((acc, curr) => acc + curr.credit, 0);
 
-      // Write Total Credits & SGPA in Column E (Wait, Grade is F (6), but in template Total Credits is E? Let's write to both E and F or find the right column)
-      // Usually Total Credits and SGPA values are placed in the Grade column or Credits column.
-      // We will write to column 5 (Credits) and column 6 (Grade) if needed, but let's stick to column 5 or 6 depending on where they were.
+      // Write Total Credits & SGPA in Column E (5)
       sheet.getCell(totalCreditsRow, 5).value = totalCredits;
       sheet.getCell(sgpaRow, 5).value = Number(sgpa.toFixed(2));
-      sheet.getCell(totalCreditsRow, 6).value = totalCredits; // Just to be safe, sometimes merged
-      sheet.getCell(sgpaRow, 6).value = Number(sgpa.toFixed(2));
     });
 
     // Write to buffer

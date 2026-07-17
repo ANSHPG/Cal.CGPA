@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { pdf } from "@react-pdf/renderer";
-import { Download, ChevronRight, ChevronLeft, AlertCircle, Save, LogOut, ShieldAlert } from "lucide-react";
+import { Download, ChevronRight, ChevronLeft, AlertCircle, Save, LogOut, ShieldAlert, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -153,6 +153,19 @@ export default function Home() {
       },
     }));
     setValidationError(null); // Clear error on change
+  };
+
+  const handleResetSemester = () => {
+    const sem = semestersData.find(s => s.id === currentSemesterId);
+    if (!sem) return;
+    
+    if (confirm(`Are you sure you want to reset all grades for Semester ${sem.baseSem || sem.id}?`)) {
+      setGrades((prev) => {
+        const newGrades = { ...prev };
+        newGrades[currentSemesterId] = {};
+        return newGrades;
+      });
+    }
   };
 
   // Compute Year based on max semester filled
@@ -559,11 +572,22 @@ export default function Home() {
                   <CardTitle className="text-xl mb-1">Semester Grades</CardTitle>
                   <p className="text-sm text-muted">Select a semester and fill out your grades.</p>
                 </div>
-                <div className="w-full sm:w-[320px]">
-                  <SemesterDropdown
-                    value={currentSemesterId}
-                    onChange={(val) => setCurrentSemesterId(val)}
-                  />
+                <div className="w-full sm:w-[320px] flex items-center gap-2">
+                  <div className="flex-1">
+                    <SemesterDropdown
+                      value={currentSemesterId}
+                      onChange={(val) => setCurrentSemesterId(val)}
+                    />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="shrink-0 h-10 w-10 text-muted hover:text-rose-500 hover:bg-rose-500/10 border-surface-border transition-colors"
+                    onClick={handleResetSemester}
+                    title="Reset Semester Grades"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
