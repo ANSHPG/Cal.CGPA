@@ -59,9 +59,7 @@ export default function AdminPage() {
       const studentsList: Student[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        if (data.role === "student") {
-          studentsList.push(data as Student);
-        }
+        studentsList.push(data as Student);
       });
       // Sort students by regNo (ascending), putting empty regNo at bottom
       studentsList.sort((a, b) => {
@@ -169,8 +167,26 @@ export default function AdminPage() {
     
     if (confirm(`Are you sure you want to permanently delete all data for ${selectedStudent.displayName || selectedStudent.email}? This cannot be undone.`)) {
       try {
+        // Delete from Firestore
         await deleteDoc(doc(db, "users", selectedStudent.uid));
         await deleteDoc(doc(db, "grades", selectedStudent.uid));
+        
+        // Delete from Authentication via our new API route
+        const response = await fetch("/api/delete-user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ uid: selectedStudent.uid }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Failed to delete from Auth:", errorData.error);
+          alert(`Deleted from Firestore, but failed to delete from Auth: ${errorData.error}`);
+        } else {
+          alert("User data has been completely deleted from Firestore and Authentication.");
+        }
         
         // Remove from local state
         const newStudents = students.filter(s => s.uid !== selectedStudent.uid);
@@ -178,8 +194,6 @@ export default function AdminPage() {
         setFilteredStudents(newStudents);
         setSelectedStudent(null);
         setStudentGrades(null);
-        
-        alert("Student data has been deleted from the database.");
       } catch (error) {
         console.error("Error deleting student data:", error);
         alert("Failed to delete student data.");
@@ -348,7 +362,12 @@ export default function AdminPage() {
                       <UserIcon className="w-5 h-5" />
                     </div>
                     <div className="overflow-hidden">
-                      <div className="font-medium text-ink truncate">{student.displayName || "Unknown Name"}</div>
+                      <div className="font-medium text-ink truncate flex items-center gap-2">
+                        {student.displayName || "Unknown Name"}
+                        {student.role === "admin" && (
+                          <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-rose-500/10 text-rose-500 rounded border border-rose-500/20">Admin</span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted font-mono">{student.regNo || "No RegNo"}</div>
                     </div>
                   </button>
