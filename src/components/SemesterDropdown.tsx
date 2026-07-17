@@ -72,7 +72,7 @@ export function SemesterDropdown({ value, onChange }: SemesterDropdownProps) {
                       <span>{sem.label}</span>
                       {isOldScheme && (
                         <span className="text-[10px] uppercase tracking-wider font-semibold bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded border border-amber-500/20">
-                          Old Scheme
+                          Repeating
                         </span>
                       )}
                     </div>
