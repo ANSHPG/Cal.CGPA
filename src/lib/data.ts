@@ -7,6 +7,8 @@ export type Subject = {
 export type Semester = {
   id: number;
   label: string;
+  baseSem?: number;
+  isOldScheme?: boolean;
   subjects: Subject[];
 };
 
@@ -106,6 +108,71 @@ export const semestersData: Semester[] = [
       { name: "DIGITAL SIGNAL PROCESSING LABORATORY", code: "EE3504", credit: 1.5 },
       { name: "PROJECT FOR PRODUCT DEVELOPMENT-I", code: "EE3602", credit: 3.0 },
       { name: "ENVIRONMENTAL ENGINEERING", code: "IP3401", credit: 2.0 }
+    ]
+  },
+  {
+    id: 7,
+    label: "Semester I (old-course) 2022-2023",
+    baseSem: 1,
+    isOldScheme: true,
+    subjects: [
+      { name: "MATHEMATICS-I", code: "UBSMH102", credit: 4.0 },
+      { name: "PHYSICS", code: "UBSPH101", credit: 4.0 },
+      { name: "BASIC ELECTRICAL ENGINEERING", code: "UESEE103", credit: 4.0 },
+      { name: "ENGLISH", code: "UHSMH105", credit: 2.0 },
+      { name: "BASIC ELECTRICAL ENGINEERING LAB", code: "ULCEE102", credit: 1.0 },
+      { name: "WORK SHOP/BASIC MANUFACTURING PROCESS LAB", code: "ULCME105", credit: 3.0 },
+      { name: "ENGLISH LAB", code: "ULCMH104", credit: 1.0 },
+      { name: "PHYSICS LAB", code: "ULCPH101", credit: 1.5 }
+    ]
+  },
+  {
+    id: 8,
+    label: "Semester II (old-course) 2022-2023",
+    baseSem: 2,
+    isOldScheme: true,
+    subjects: [
+      { name: "CHEMISTRY", code: "UBSCH201", credit: 4.0 },
+      { name: "MATHEMATICS-II", code: "UBSMH202", credit: 4.0 },
+      { name: "PROGRAMMING FOR PROBLEM SOLVING", code: "UESCS203", credit: 3.0 },
+      { name: "BASIC ELECTRONICS ENGINEERING", code: "UESIE202", credit: 2.0 },
+      { name: "CHEMISTRY LAB", code: "ULCCH201", credit: 1.5 },
+      { name: "PROGRAMMING FOR PROBLEM SOLVING LAB", code: "ULCCS202", credit: 2.0 },
+      { name: "BASIC ELECTRONICS ENGINEERING LABORATORY", code: "ULCIE202", credit: 1.0 },
+      { name: "ENGINEERING GRAPHICS AND DESIGN LAB", code: "ULCME203", credit: 3.0 }
+    ]
+  },
+  {
+    id: 9,
+    label: "Semester III (old-course) 2023-2024",
+    baseSem: 3,
+    isOldScheme: true,
+    subjects: [
+      { name: "MATHEMATICS-III", code: "UBSMH301", credit: 4.0 },
+      { name: "ENGINEERING ECONOMICS", code: "UHSMH307", credit: 3.0 },
+      { name: "ELECTRICAL MACHINES-I LABORATORY", code: "ULCEE302", credit: 1.5 },
+      { name: "ANALOG ELECTRONIC CIRCUIT LABORATORY", code: "ULCIE301", credit: 1.5 },
+      { name: "ELECTRICAL CIRCUIT ANALYSIS", code: "UPCEE301", credit: 3.0 },
+      { name: "ELECTRICAL MACHINES-I", code: "UPCEE302", credit: 4.0 },
+      { name: "ELECTROMAGNETIC FIELDS", code: "UPCEE303", credit: 3.0 },
+      { name: "ANALOG ELECTRONICS CIRCUIT", code: "UPCIE302", credit: 3.0 }
+    ]
+  },
+  {
+    id: 10,
+    label: "Semester IV (old-course) 2023-2024",
+    baseSem: 4,
+    isOldScheme: true,
+    subjects: [
+      { name: "SIGNAL AND SYSTEMS", code: "UESIE404", credit: 3.0 },
+      { name: "ORGANIZATIONAL BEHAVIOR", code: "UHSMH406", credit: 3.0 },
+      { name: "ELECTRICAL MACHINE-II LAB", code: "ULCEE402", credit: 1.5 },
+      { name: "MEASUREMENT TECHNIQUES LAB", code: "ULCEE403", credit: 1.5 },
+      { name: "DIGITAL SYSTEM DESIGN LAB", code: "ULCIE401", credit: 1.5 },
+      { name: "ENVIRONMENTAL SCIENCE", code: "UMCCE401", credit: 0.0 },
+      { name: "ELECTRICAL MACHINE-II", code: "UPCEE402", credit: 4.0 },
+      { name: "MEASUREMENT TECHNIQUES", code: "UPCEE403", credit: 3.0 },
+      { name: "DIGITAL SYSTEM DESIGN", code: "UPCIE401", credit: 3.0 }
     ]
   }
 ];

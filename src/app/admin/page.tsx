@@ -190,7 +190,7 @@ export default function AdminPage() {
     if (!grades) return "0.00";
     const sem = semestersData.find(s => s.id === semId);
     if (!sem) return "0.00";
-    const scale = semId <= 2 ? gradingScale1to2 : gradingScale3to6;
+    const scale = sem.isOldScheme ? gradingScale1to2 : (sem.id <= 2 ? gradingScale1to2 : gradingScale3to6);
     const semGrades = grades[semId];
     if (!semGrades) return "0.00";
 
@@ -215,7 +215,7 @@ export default function AdminPage() {
     let totalCredits = 0;
 
     semestersData.forEach((sem) => {
-      const scale = sem.id <= 2 ? gradingScale1to2 : gradingScale3to6;
+      const scale = sem.isOldScheme ? gradingScale1to2 : (sem.id <= 2 ? gradingScale1to2 : gradingScale3to6);
       const semGrades = grades[sem.id];
       if (!semGrades) return;
 
@@ -245,11 +245,13 @@ export default function AdminPage() {
     
     let year = "1st Year";
     if (filledSemesters.length > 0) {
-      const maxSem = Math.max(...filledSemesters);
-      if (maxSem <= 2) year = "1st Year";
-      else if (maxSem <= 4) year = "2nd Year";
-      else if (maxSem <= 6) year = "3rd Year";
-      else year = "4th Year";
+      const maxBaseSem = Math.max(...filledSemesters.map(id => {
+        const sem = semestersData.find(s => s.id === id);
+        return sem?.baseSem || id;
+      }));
+      const yearNum = maxBaseSem % 2 === 0 ? (maxBaseSem / 2) + 1 : (maxBaseSem + 1) / 2;
+      const suffix = yearNum === 1 ? "st" : yearNum === 2 ? "nd" : yearNum === 3 ? "rd" : "th";
+      year = `${yearNum}${suffix} Year`;
     }
 
     const sgpaData: Record<number, number> = {};

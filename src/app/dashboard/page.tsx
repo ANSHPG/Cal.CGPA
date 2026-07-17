@@ -169,18 +169,20 @@ export default function Home() {
       .map(Number);
 
     if (filledSemesters.length === 0) return "1st Year";
-    const maxSem = Math.max(...filledSemesters);
-    if (maxSem <= 2) return "1st Year";
-    if (maxSem <= 4) return "2nd Year";
-    if (maxSem <= 6) return "3rd Year";
-    return "4th Year";
+    const maxBaseSem = Math.max(...filledSemesters.map(id => {
+      const sem = semestersData.find(s => s.id === id);
+      return sem?.baseSem || id;
+    }));
+    const yearNum = maxBaseSem % 2 === 0 ? (maxBaseSem / 2) + 1 : (maxBaseSem + 1) / 2;
+    const suffix = yearNum === 1 ? "st" : yearNum === 2 ? "nd" : yearNum === 3 ? "rd" : "th";
+    return `${yearNum}${suffix} Year`;
   }, [grades]);
 
   // Compute SGPA for each semester
   const sgpaData = useMemo(() => {
     const data: Record<number, number> = {};
     semestersData.forEach((sem) => {
-      const scale = sem.id <= 2 ? gradingScale1to2 : gradingScale3to6;
+      const scale = sem.isOldScheme ? gradingScale1to2 : (sem.id <= 2 ? gradingScale1to2 : gradingScale3to6);
       const semGrades = grades[sem.id];
       if (!semGrades) return;
 
@@ -208,7 +210,7 @@ export default function Home() {
     let totalCredits = 0;
 
     semestersData.forEach((sem) => {
-      const scale = sem.id <= 2 ? gradingScale1to2 : gradingScale3to6;
+      const scale = sem.isOldScheme ? gradingScale1to2 : (sem.id <= 2 ? gradingScale1to2 : gradingScale3to6);
       const semGrades = grades[sem.id];
       if (!semGrades) return;
 
@@ -239,17 +241,29 @@ export default function Home() {
       return false;
     }
 
-    const maxSem = filledSemesters[filledSemesters.length - 1];
+    const filledBaseSems = new Map<number, number>();
+    filledSemesters.forEach(id => {
+      const sem = semestersData.find(s => s.id === id);
+      if (sem) filledBaseSems.set(sem.baseSem || sem.id, id);
+    });
 
-    for (let i = 1; i <= maxSem; i++) {
-      const semData = semestersData.find((s) => s.id === i);
+    const maxBaseSem = Math.max(...Array.from(filledBaseSems.keys()));
+
+    for (let i = 1; i <= maxBaseSem; i++) {
+      const semId = filledBaseSems.get(i);
+      if (!semId) {
+        setValidationError(`Missing grades for Semester ${i}`);
+        return false;
+      }
+
+      const semData = semestersData.find((s) => s.id === semId);
       if (!semData) continue;
 
-      const semGrades = grades[i] || {};
+      const semGrades = grades[semId] || {};
       const missingSubjects = semData.subjects.filter((sub) => !semGrades[sub.code]);
 
       if (missingSubjects.length > 0) {
-        setValidationError(`Missing grades in Semester ${i}: ${missingSubjects.map((s) => s.name).join(", ")}`);
+        setValidationError(`Missing grades in ${semData.label}: ${missingSubjects.map((s) => s.name).join(", ")}`);
         return false;
       }
     }

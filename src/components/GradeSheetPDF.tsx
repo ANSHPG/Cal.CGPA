@@ -171,10 +171,12 @@ export const GradeSheetPDF: React.FC<GradeSheetPDFProps> = ({
     },
   });
 
-  const filledSemesters = semestersData.filter((sem) => {
-    const semGrades = grades[sem.id];
-    return semGrades && Object.values(semGrades).some((g) => g !== "");
-  });
+  const filledSemesters = semestersData
+    .filter((sem) => {
+      const semGrades = grades[sem.id];
+      return semGrades && Object.values(semGrades).some((g) => g !== "");
+    })
+    .sort((a, b) => (a.baseSem || a.id) - (b.baseSem || b.id));
 
   return (
     <Document>
@@ -203,7 +205,7 @@ export const GradeSheetPDF: React.FC<GradeSheetPDFProps> = ({
 
           return (
             <View key={sem.id} wrap={false}>
-              <Text style={styles.sectionTitle}>Semester -- {sem.id}</Text>
+              <Text style={styles.sectionTitle}>{sem.label}</Text>
               <View style={styles.table}>
                 <View style={styles.tableHeaderRow}>
                   <Text style={[styles.colSl, { fontWeight: "bold" }]}>Sl. No.</Text>
@@ -259,7 +261,7 @@ export const GradeSheetPDF: React.FC<GradeSheetPDFProps> = ({
 
         <View style={styles.conversionContainer} wrap={false}>
           <View style={styles.conversionBox}>
-            <Text style={styles.conversionTitle}>Semester I--II</Text>
+            <Text style={styles.conversionTitle}>Old Scheme / Sem I-II</Text>
             <View style={styles.convTable}>
               <View style={[styles.convRow, styles.convHeader]}>
                 <Text style={styles.convCol}>Grade</Text>
@@ -274,7 +276,7 @@ export const GradeSheetPDF: React.FC<GradeSheetPDFProps> = ({
             </View>
           </View>
           <View style={styles.conversionBox}>
-            <Text style={styles.conversionTitle}>Semester III onwards</Text>
+            <Text style={styles.conversionTitle}>New Scheme / Sem III onwards</Text>
             <View style={styles.convTable}>
               <View style={[styles.convRow, styles.convHeader]}>
                 <Text style={styles.convCol}>Grade</Text>

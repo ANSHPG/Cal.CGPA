@@ -21,6 +21,8 @@ export async function POST(request: Request) {
     // 1. Populate the "Overall" Sheet
     const overallSheet = workbook.getWorksheet("Student Summary");
     if (overallSheet) {
+      // Cell A7: Label
+      overallSheet.getCell("A7").value = "CGPA (Till 6 Semester)";
       // Cell B3: Student Name
       overallSheet.getCell("B3").value = studentDetails.name || "N/A";
       // Cell B4: Registration No.
@@ -33,65 +35,91 @@ export async function POST(request: Request) {
       overallSheet.getCell("B7").value = cgpa ? Number(cgpa.toFixed(2)) : 0.00;
     }
 
+    // Identify filled base semesters
+    const filledSems = semestersData.filter((sem) => {
+      const semGrades = grades[sem.id] || {};
+      return Object.values(semGrades).some((g) => g !== "");
+    });
+    const filledBaseSems = new Set(filledSems.map((sem) => sem.baseSem || sem.id));
+
+    // Delete unused semester sheets
+    [1, 2, 3, 4, 5, 6].forEach((baseId) => {
+      if (!filledBaseSems.has(baseId)) {
+        const sheet = workbook.getWorksheet(`Semester ${baseId}`);
+        if (sheet) {
+          workbook.removeWorksheet(sheet.id);
+        }
+      }
+    });
+
     // 2. Populate Semester Sheets
-    semestersData.forEach((sem) => {
-      const sheetName = `Semester ${sem.id}`;
+    filledSems.forEach((sem) => {
+      const baseId = sem.baseSem || sem.id;
+      const sheetName = `Semester ${baseId}`;
       const sheet = workbook.getWorksheet(sheetName);
       if (!sheet) return;
 
       const semGrades = grades[sem.id] || {};
-      const isSemesterFilled = Object.values(semGrades).some((g) => g !== "");
 
-      const totalCreditsRow = 4 + sem.subjects.length + 1;
+      // Find Total Credits and SGPA rows dynamically based on the template
+      let totalCreditsRow = 16; // default fallback
+      for (let r = 4; r <= 30; r++) {
+        const val = sheet.getCell(r, 4).value;
+        if (val === "Total Credits") {
+          totalCreditsRow = r;
+          break;
+        }
+      }
       const sgpaRow = totalCreditsRow + 1;
+
+      // Clear all existing subject rows in the template before writing
+      for (let r = 4; r < totalCreditsRow; r++) {
+        sheet.getCell(r, 1).value = ""; // A
+        sheet.getCell(r, 2).value = ""; // B (Sl. No.)
+        sheet.getCell(r, 3).value = ""; // C (Code)
+        sheet.getCell(r, 4).value = ""; // D (Name)
+        sheet.getCell(r, 5).value = ""; // E (Credits)
+        sheet.getCell(r, 6).value = ""; // F (Grade) - wait, column index starts at 1, but we found Grade is at column 5 previously. Wait!
+      }
 
       sem.subjects.forEach((sub, idx) => {
         const rowNum = 4 + idx;
         const gradeKey = semGrades[sub.code] || "";
 
-        if (isSemesterFilled) {
-          const isBack = gradeKey.endsWith("_BACK");
-          const baseGrade = isBack ? gradeKey.replace("_BACK", "") : gradeKey;
+        const isBack = gradeKey.endsWith("_BACK");
+        const baseGrade = isBack ? gradeKey.replace("_BACK", "") : gradeKey;
 
-          // Set Grade
-          const gradeCell = sheet.getCell(rowNum, 5); // Column E
-          gradeCell.value = baseGrade || "";
+        // Write Subject Details
+        sheet.getCell(rowNum, 2).value = idx + 1; // Sl. No. (Column B)
+        sheet.getCell(rowNum, 3).value = sub.code; // Subject Code (Column C)
+        
+        const nameCell = sheet.getCell(rowNum, 4); // Subject Name (Column D)
+        nameCell.value = sub.name;
+        
+        sheet.getCell(rowNum, 5).value = sub.credit; // Credits (Column E)
+        
+        const gradeCell = sheet.getCell(rowNum, 6); // Grade (Column F)
+        gradeCell.value = baseGrade || "";
 
-          if (isBack && baseGrade) {
-            // Append (back cleared) to subject name
-            const nameCell = sheet.getCell(rowNum, 3); // Column C
-            const originalName = nameCell.value ? String(nameCell.value) : sub.name;
-            if (!originalName.includes("(back cleared)")) {
-              nameCell.value = `${originalName} (back cleared)`;
-            }
-            // Style cells with color #D87D5D (ARGB: FFD87D5D)
-            nameCell.font = {
-              color: { argb: "FFD87D5D" },
-              bold: true,
-            };
-            gradeCell.font = {
-              color: { argb: "FFD87D5D" },
-              bold: true,
-            };
+        if (isBack && baseGrade) {
+          if (!sub.name.includes("(back cleared)")) {
+            nameCell.value = `${sub.name} (back cleared)`;
           }
-        } else {
-          // Empty semester: clear pre-filled grades
-          sheet.getCell(rowNum, 5).value = "";
+          nameCell.font = { color: { argb: "FFD87D5D" }, bold: true };
+          gradeCell.font = { color: { argb: "FFD87D5D" }, bold: true };
         }
       });
 
-      if (isSemesterFilled) {
-        const sgpa = sgpaData[sem.id] || 0;
-        const totalCredits = sem.subjects.reduce((acc, curr) => acc + curr.credit, 0);
+      const sgpa = sgpaData[sem.id] || 0;
+      const totalCredits = sem.subjects.reduce((acc, curr) => acc + curr.credit, 0);
 
-        // Update Total Credits & SGPA in Column E (Column 5)
-        sheet.getCell(totalCreditsRow, 5).value = totalCredits;
-        sheet.getCell(sgpaRow, 5).value = Number(sgpa.toFixed(2));
-      } else {
-        // Clear Total Credits & SGPA cells
-        sheet.getCell(totalCreditsRow, 5).value = "";
-        sheet.getCell(sgpaRow, 5).value = "";
-      }
+      // Write Total Credits & SGPA in Column E (Wait, Grade is F (6), but in template Total Credits is E? Let's write to both E and F or find the right column)
+      // Usually Total Credits and SGPA values are placed in the Grade column or Credits column.
+      // We will write to column 5 (Credits) and column 6 (Grade) if needed, but let's stick to column 5 or 6 depending on where they were.
+      sheet.getCell(totalCreditsRow, 5).value = totalCredits;
+      sheet.getCell(sgpaRow, 5).value = Number(sgpa.toFixed(2));
+      sheet.getCell(totalCreditsRow, 6).value = totalCredits; // Just to be safe, sometimes merged
+      sheet.getCell(sgpaRow, 6).value = Number(sgpa.toFixed(2));
     });
 
     // Write to buffer
