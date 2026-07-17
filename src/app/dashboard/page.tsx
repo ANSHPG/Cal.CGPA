@@ -73,7 +73,7 @@ export default function Home() {
     fetchData();
   }, [user]);
 
-  const handleSaveToCloud = async (): Promise<boolean> => {
+  const handleSaveToCloud = async (skipValidation: boolean = false): Promise<boolean> => {
     if (!user) return false;
     setIsSaving(true);
     setSaveMessage("");
@@ -84,19 +84,21 @@ export default function Home() {
         return false;
       }
 
-      // Check for missing subjects in the currently viewed semester only
-      const currentSemGrades = grades[currentSemesterId] || {};
-      const hasAnyGradeInCurrent = Object.values(currentSemGrades).some((g) => g !== "");
-      
-      if (hasAnyGradeInCurrent) {
-        const currentSemData = semestersData.find((s) => s.id === currentSemesterId);
-        if (currentSemData) {
-          const missingSubjects = currentSemData.subjects.filter((sub) => !currentSemGrades[sub.code]);
-          if (missingSubjects.length > 0) {
-            const subjectNames = missingSubjects.map((s) => s.name).join(", ");
-            setSaveMessage(`Error: Missing grades in ${currentSemData.label} for: ${subjectNames}`);
-            setIsSaving(false);
-            return false;
+      if (!skipValidation) {
+        // Check for missing subjects in the currently viewed semester only
+        const currentSemGrades = grades[currentSemesterId] || {};
+        const hasAnyGradeInCurrent = Object.values(currentSemGrades).some((g) => g !== "");
+        
+        if (hasAnyGradeInCurrent) {
+          const currentSemData = semestersData.find((s) => s.id === currentSemesterId);
+          if (currentSemData) {
+            const missingSubjects = currentSemData.subjects.filter((sub) => !currentSemGrades[sub.code]);
+            if (missingSubjects.length > 0) {
+              const subjectNames = missingSubjects.map((s) => s.name).join(", ");
+              setSaveMessage(`Error: Missing grades in ${currentSemData.label} for: ${subjectNames}`);
+              setIsSaving(false);
+              return false;
+            }
           }
         }
       }
@@ -465,7 +467,7 @@ export default function Home() {
                   className="border-hairline h-8"
                   onClick={async () => {
                     if (isEditingDetails) {
-                      const success = await handleSaveToCloud();
+                      const success = await handleSaveToCloud(true);
                       if (success) {
                         setIsEditingDetails(false);
                       }
