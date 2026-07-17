@@ -694,7 +694,7 @@ export default function Home() {
                 </div>
                 
                 <div className="w-full space-y-3">
-                  <Button size="lg" className="w-full font-bold tracking-wide shadow-md bg-[#2A2A2A] hover:bg-[#333333] text-white border border-[#404040]" onClick={handleSaveToCloud} disabled={isSaving}>
+                  <Button size="lg" className="w-full font-bold tracking-wide shadow-md bg-[#2A2A2A] hover:bg-[#333333] text-white border border-[#404040]" onClick={() => handleSaveToCloud(false)} disabled={isSaving}>
                     <Save className="mr-2 h-5 w-5" />
                     {isSaving ? "Saving..." : "Save Progress to Cloud"}
                   </Button>
