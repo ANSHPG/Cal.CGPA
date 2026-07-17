@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check } from "lucide-react";
-import { gradeDisplayLabels, gradingScale3to6 } from "@/lib/data";
+import { gradeDisplayLabels, gradingScale3to6, semestersData } from "@/lib/data";
 
 interface GradeDropdownProps {
   value: string;
@@ -52,9 +52,12 @@ export function GradeDropdown({ value, onChange, semesterId }: GradeDropdownProp
     setIsOpen(false);
   };
 
+  const currentSem = semestersData.find((s) => s.id === semesterId);
+  const isOldSchemeSem = currentSem?.isOldScheme || semesterId <= 2;
+
   const renderOption = (g: string, isBack = false) => {
     let label = g;
-    if (semesterId > 2) {
+    if (!isOldSchemeSem) {
       label = `${g} (${gradingScale3to6[g]} pts)`;
     } else {
       label = gradeDisplayLabels[g] || g;
@@ -89,7 +92,7 @@ export function GradeDropdown({ value, onChange, semesterId }: GradeDropdownProp
 
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-surface-card border border-hairline rounded-md shadow-lg max-h-64 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {semesterId <= 2 ? (
+          {isOldSchemeSem ? (
             <>
               <div className="px-3 py-1.5 text-xs font-semibold text-muted bg-surface-soft uppercase tracking-wider">
                 Old Scheme (Original)

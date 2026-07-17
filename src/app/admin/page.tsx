@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Search, User as UserIcon, Save, Download, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
+import { SemesterDropdown } from "@/components/SemesterDropdown";
 import { GradeDropdown } from "@/components/GradeDropdown";
 
 interface Student {
@@ -514,18 +515,11 @@ export default function AdminPage() {
                           SGPA: {calculateSgpa(studentGrades.grades, currentSemesterId)}
                         </div>
                       </div>
-                      <div className="w-full sm:w-48 shrink-0">
-                        <select
-                          className="w-full px-3 py-2 border border-hairline rounded-md bg-surface-soft text-ink focus:outline-none"
+                      <div className="w-full sm:w-[320px]">
+                        <SemesterDropdown
                           value={currentSemesterId}
-                          onChange={(e) => setCurrentSemesterId(Number(e.target.value))}
-                        >
-                          {semestersData.map((sem) => (
-                            <option key={sem.id} value={sem.id}>
-                              {sem.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => setCurrentSemesterId(val)}
+                        />
                       </div>
                     </div>
 

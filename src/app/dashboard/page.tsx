@@ -13,6 +13,7 @@ import { GradeSheetPDF } from "@/components/GradeSheetPDF";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
 import { GradeDropdown } from "@/components/GradeDropdown";
+import { SemesterDropdown } from "@/components/SemesterDropdown";
 import { doc, getDoc, setDoc, updateDoc, query, collection, where, getDocs } from "firebase/firestore";
 import { updatePassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -557,17 +558,11 @@ export default function Home() {
                   <CardTitle className="text-xl mb-1">Semester Grades</CardTitle>
                   <p className="text-sm text-muted">Select a semester and fill out your grades.</p>
                 </div>
-                <div className="w-full sm:w-48">
-                  <Select
+                <div className="w-full sm:w-[320px]">
+                  <SemesterDropdown
                     value={currentSemesterId}
-                    onChange={(e) => setCurrentSemesterId(Number(e.target.value))}
-                  >
-                    {semestersData.map((sem) => (
-                      <option key={sem.id} value={sem.id}>
-                        {sem.label}
-                      </option>
-                    ))}
-                  </Select>
+                    onChange={(val) => setCurrentSemesterId(val)}
+                  />
                 </div>
               </CardHeader>
               <CardContent className="p-0">
