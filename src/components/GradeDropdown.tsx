@@ -83,7 +83,11 @@ export function GradeDropdown({ value, onChange, semesterId }: GradeDropdownProp
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="truncate">
-          {value ? (gradeDisplayLabels[value] || value) : "Select Grade"}
+          {value 
+            ? (!isOldSchemeSem && gradingScale3to6[value] !== undefined
+                ? `${value} (${gradingScale3to6[value]} pts)`
+                : (gradeDisplayLabels[value] || value)) 
+            : "Select Grade"}
         </span>
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-muted">
           <ChevronDown className="h-4 w-4 opacity-50" />
