@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { pdf } from "@react-pdf/renderer";
-import { Download, ChevronRight, ChevronLeft, AlertCircle, Save, LogOut, ShieldAlert, RotateCcw } from "lucide-react";
+import { Download, ChevronRight, ChevronLeft, AlertCircle, Save, LogOut, ShieldAlert, RotateCcw, BadgeCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ export default function Home() {
     name: "",
     rollNo: "",
     branch: "Electrical Engineering",
+    verified: false,
   });
   const [isEditingDetails, setIsEditingDetails] = useState(false);
 
@@ -63,10 +64,23 @@ export default function Home() {
           if (docSnap.exists()) {
             const data = docSnap.data();
             if (data.grades) setGrades(data.grades);
-            if (data.studentDetails) setStudentDetails(data.studentDetails);
+            if (data.studentDetails) setStudentDetails(prev => ({ ...prev, ...data.studentDetails }));
           }
         } catch (error) {
           console.error("Error fetching grades:", error);
+        }
+
+        try {
+          const userDocRef = doc(db, "users", user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            setStudentDetails((prev) => ({
+              ...prev,
+              verified: userDocSnap.data().verified || false,
+            }));
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
         }
       }
     }
@@ -459,6 +473,11 @@ export default function Home() {
                   )}
                   {!hasPasswordProvider && (
                     <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">No Assigned Password</span>
+                  )}
+                  {studentDetails.verified && (
+                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 flex items-center gap-1" title="Verified by Admin">
+                      <BadgeCheck className="w-3 h-3" /> Verified
+                    </span>
                   )}
                 </CardTitle>
                 <Button 

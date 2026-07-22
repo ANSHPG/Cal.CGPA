@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Search, User as UserIcon, Save, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, User as UserIcon, Save, Download, Trash2, CheckCircle, BadgeCheck, Users, GraduationCap, Archive } from "lucide-react";
 import Link from "next/link";
 import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
 import { SemesterDropdown } from "@/components/SemesterDropdown";
@@ -21,6 +21,7 @@ interface Student {
   regNo: string;
   branch?: string;
   role?: "student" | "admin";
+  verified?: boolean;
 }
 
 export default function AdminPage() {
@@ -31,6 +32,7 @@ export default function AdminPage() {
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [allGrades, setAllGrades] = useState<Record<string, any>>({});
   const [studentGrades, setStudentGrades] = useState<any>(null);
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [currentSemesterId, setCurrentSemesterId] = useState(1);
@@ -39,6 +41,7 @@ export default function AdminPage() {
   
   const [isEditingCredentials, setIsEditingCredentials] = useState(false);
   const [isSavingCredentials, setIsSavingCredentials] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [editCreds, setEditCreds] = useState({ displayName: "", regNo: "", email: "", branch: "" });
 
   useEffect(() => {
@@ -55,11 +58,21 @@ export default function AdminPage() {
 
   const fetchStudents = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, "users"));
+      const [usersSnap, gradesSnap] = await Promise.all([
+        getDocs(collection(db, "users")),
+        getDocs(collection(db, "grades"))
+      ]);
+
+      const gradesMap: Record<string, any> = {};
+      gradesSnap.forEach((doc) => {
+        gradesMap[doc.id] = doc.data();
+      });
+      setAllGrades(gradesMap);
+
       const studentsList: Student[] = [];
-      querySnapshot.forEach((doc) => {
+      usersSnap.forEach((doc) => {
         const data = doc.data();
-        studentsList.push(data as Student);
+        studentsList.push({ uid: doc.id, ...data } as Student);
       });
       // Sort students by regNo (ascending), putting empty regNo at bottom
       studentsList.sort((a, b) => {
@@ -159,6 +172,20 @@ export default function AdminPage() {
       console.error("Error saving credentials:", error);
     } finally {
       setIsSavingCredentials(false);
+    }
+  };
+
+  const handleVerifyStudent = async () => {
+    if (!selectedStudent) return;
+    try {
+      const newStatus = !selectedStudent.verified;
+      await setDoc(doc(db, "users", selectedStudent.uid), { verified: newStatus }, { merge: true });
+      setSelectedStudent({ ...selectedStudent, verified: newStatus });
+      setStudents(students.map(s => s.uid === selectedStudent.uid ? { ...s, verified: newStatus } : s));
+      setFilteredStudents(filteredStudents.map(s => s.uid === selectedStudent.uid ? { ...s, verified: newStatus } : s));
+    } catch (error) {
+      console.error("Error verifying student:", error);
+      alert("Failed to update verification status.");
     }
   };
 
@@ -307,6 +334,93 @@ export default function AdminPage() {
     }
   };
 
+  const handleDownloadAllExcel = async () => {
+    setIsDownloadingAll(true);
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      const folder = zip.folder("Student_Excel_Sheets");
+
+      for (const student of students) {
+        const studentGradeData = allGrades[student.uid];
+        if (!studentGradeData || !studentGradeData.grades) continue;
+        const grades = studentGradeData.grades;
+
+        const filledSemesters = Object.keys(grades)
+          .filter((semId) => {
+            const semGrades = grades[Number(semId)];
+            return Object.values(semGrades).some((g) => g !== "");
+          })
+          .map(Number);
+        
+        let year = "1st Year";
+        if (filledSemesters.length > 0) {
+          const maxBaseSem = Math.max(...filledSemesters.map(id => {
+            const sem = semestersData.find(s => s.id === id);
+            return sem?.baseSem || id;
+          }));
+          const yearNum = maxBaseSem % 2 === 0 ? (maxBaseSem / 2) + 1 : (maxBaseSem + 1) / 2;
+          const suffix = yearNum === 1 ? "st" : yearNum === 2 ? "nd" : yearNum === 3 ? "rd" : "th";
+          year = `${yearNum}${suffix} Year`;
+        }
+
+        const sgpaData: Record<number, number> = {};
+        semestersData.forEach(sem => {
+          sgpaData[sem.id] = Number(calculateSgpa(grades, sem.id));
+        });
+
+        const cgpa = Number(calculateCgpa(grades));
+
+        const response = await fetch("/api/download-excel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentDetails: { 
+              name: student.displayName || "Unknown", 
+              rollNo: student.regNo || "", 
+              branch: student.branch || "Electrical Engineering", 
+              year 
+            },
+            grades,
+            sgpaData,
+            cgpa,
+          }),
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const safeName = (student.displayName || "Student").trim().replace(/\s+/g, "_");
+          folder?.file(`${safeName}_Academic_Record.xlsx`, blob);
+        }
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `All_Student_Excel_Sheets.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong generating the ZIP file.");
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
+  const totalStudents = students.length;
+  const verifiedStudentsCount = students.filter(s => s.verified).length;
+  const studentsCompleted6Sems = students.filter(s => {
+    const sGrades = allGrades[s.uid]?.grades;
+    if (!sGrades) return false;
+    const filledSemsCount = Object.keys(sGrades).filter((semId) => {
+      const semGrades = sGrades[Number(semId)];
+      return Object.values(semGrades).some((g) => g !== "");
+    }).length;
+    return filledSemsCount >= 6;
+  }).length;
+
   if (loading || (user && user.role !== "admin")) {
     return (
       <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
@@ -327,6 +441,49 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto py-12 px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Metrics Row */}
+        <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <Card className="bg-surface-card border-hairline flex items-center p-4">
+            <div className="p-3 bg-primary/10 rounded-full mr-4 text-primary">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-muted">Total Registered</p>
+              <h4 className="text-2xl font-bold text-ink">{totalStudents}</h4>
+            </div>
+          </Card>
+          <Card className="bg-surface-card border-hairline flex items-center p-4">
+            <div className="p-3 bg-emerald-500/10 rounded-full mr-4 text-emerald-500">
+              <GraduationCap className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-muted">Filled 6 Semesters</p>
+              <h4 className="text-2xl font-bold text-ink">{studentsCompleted6Sems}</h4>
+            </div>
+          </Card>
+          <Card className="bg-surface-card border-hairline flex items-center p-4">
+            <div className="p-3 bg-blue-500/10 rounded-full mr-4 text-blue-500">
+              <BadgeCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-muted">Verified Students</p>
+              <h4 className="text-2xl font-bold text-ink">{verifiedStudentsCount}</h4>
+            </div>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-3 flex justify-end">
+          <Button 
+            onClick={handleDownloadAllExcel}
+            disabled={isDownloadingAll || students.length === 0}
+            className="bg-primary hover:bg-primary-active text-white shadow-sm"
+          >
+            <Archive className="w-4 h-4 mr-2" />
+            {isDownloadingAll ? "Generating ZIP..." : "Download All Excel Sheets (ZIP)"}
+          </Button>
+        </div>
+
         {/* Student List Sidebar */}
         <div className="lg:col-span-1 space-y-4">
           <div className="relative">
@@ -362,6 +519,11 @@ export default function AdminPage() {
                         {student.role === "admin" && (
                           <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-rose-500/10 text-rose-500 rounded border border-rose-500/20">Admin</span>
                         )}
+                        {student.verified && (
+                          <span title="Verified">
+                            <BadgeCheck className="w-4 h-4 text-blue-500" />
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-muted font-mono">{student.regNo || "No RegNo"}</div>
                     </div>
@@ -396,8 +558,25 @@ export default function AdminPage() {
                               <span>{selectedStudent.branch}</span>
                             </>
                           )}
+                          {selectedStudent.verified && (
+                            <>
+                              <span>•</span>
+                              <span className="text-blue-500 font-bold flex items-center gap-1">
+                                <BadgeCheck className="w-4 h-4" /> Verified
+                              </span>
+                            </>
+                          )}
                         </div>
-                        <div className="mt-2 flex items-center gap-2">
+                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                          <Button 
+                            onClick={handleVerifyStudent}
+                            variant="ghost" 
+                            size="sm"
+                            className="text-xs text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 h-6 px-2 -ml-2"
+                          >
+                            <BadgeCheck className="w-3 h-3 mr-1" /> 
+                            {selectedStudent.verified ? "Unverify Student" : "Verify Student"}
+                          </Button>
                           <Button 
                             onClick={() => setIsEditingCredentials(true)}
                             variant="ghost" 
