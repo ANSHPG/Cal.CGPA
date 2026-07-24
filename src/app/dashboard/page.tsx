@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
+import { getSemestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
 import { GradeSheetPDF } from "@/components/GradeSheetPDF";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
@@ -27,9 +27,12 @@ export default function Home() {
     name: "",
     rollNo: "",
     branch: "Electrical Engineering",
+    cycle: 1,
     verified: false,
   });
   const [isEditingDetails, setIsEditingDetails] = useState(false);
+  
+  const semestersData = useMemo(() => getSemestersData(studentDetails.cycle), [studentDetails.cycle]);
 
   const [grades, setGrades] = useState<Record<number, Record<string, string>>>({});
   const [currentSemesterId, setCurrentSemesterId] = useState(1);
@@ -137,6 +140,7 @@ export default function Home() {
         displayName: studentDetails.name,
         regNo: studentDetails.rollNo,
         branch: studentDetails.branch,
+        cycle: studentDetails.cycle,
         email: user.email // ensure email is set if it was missing
       }, { merge: true });
       setSaveMessage("Progress saved to cloud!");
@@ -174,7 +178,11 @@ export default function Home() {
 
 
   const handleDetailChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setStudentDetails((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setStudentDetails((prev) => ({ 
+      ...prev, 
+      [name]: name === "cycle" ? Number(value) : value 
+    }));
   };
 
   const handleGradeChange = (semesterId: number, subjectCode: string, grade: string) => {
@@ -538,6 +546,19 @@ export default function Home() {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="cycle">First-Year Cycle</Label>
+                    <Select
+                      id="cycle"
+                      name="cycle"
+                      value={studentDetails.cycle.toString()}
+                      onChange={handleDetailChange}
+                      disabled={!isEditingDetails}
+                    >
+                      <option value="1">Cycle 1 (Physics in Sem 1)</option>
+                      <option value="2">Cycle 2 (Chemistry in Sem 1)</option>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <Label>Calculated Year</Label>
                     <div className="flex h-10 w-full items-center rounded-md border border-hairline bg-surface-soft px-3.5 text-sm text-muted">
                       {year}
@@ -615,6 +636,7 @@ export default function Home() {
                     <SemesterDropdown
                       value={currentSemesterId}
                       onChange={(val) => setCurrentSemesterId(val)}
+                      cycle={studentDetails.cycle}
                     />
                   </div>
                   <Button 
@@ -654,6 +676,7 @@ export default function Home() {
                             value={selectedGrade}
                             onChange={(val) => handleGradeChange(currentSemesterId, sub.code, val)}
                             semesterId={currentSemesterId}
+                            cycle={studentDetails.cycle}
                           />
                         </div>
                       </div>

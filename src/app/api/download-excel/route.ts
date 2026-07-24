@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import path from "path";
 import fs from "fs";
-import { semestersData } from "@/lib/data";
+import { getSemestersData } from "@/lib/data";
 
 export async function POST(request: Request) {
   try {
@@ -34,6 +34,8 @@ export async function POST(request: Request) {
       // Cell B7: CGPA
       overallSheet.getCell("B7").value = cgpa ? Number(cgpa.toFixed(2)) : 0.00;
     }
+
+    const semestersData = getSemestersData(studentDetails.cycle || 1);
 
     // Identify filled base semesters
     const filledSems = semestersData.filter((sem) => {

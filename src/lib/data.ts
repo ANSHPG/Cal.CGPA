@@ -12,6 +12,7 @@ export type Semester = {
   subjects: Subject[];
 };
 
+// Default Cycle 1 Data
 export const semestersData: Semester[] = [
   {
     id: 1,
@@ -176,6 +177,36 @@ export const semestersData: Semester[] = [
     ]
   }
 ];
+
+export const getSemestersData = (cycle: number = 1): Semester[] => {
+  const data = JSON.parse(JSON.stringify(semestersData)) as Semester[];
+  
+  if (cycle === 2) {
+    const sem1 = data.find(s => s.id === 1);
+    const sem2 = data.find(s => s.id === 2);
+    
+    if (sem1 && sem2) {
+      // Find Math-I and Math-II to keep them in their original semesters
+      const math1 = sem1.subjects.find(s => s.code === "BH1441");
+      const math2 = sem2.subjects.find(s => s.code === "BH1442");
+
+      const sem1PhysicsGroup = sem1.subjects.filter(s => s.code !== "BH1441");
+      const sem2ChemistryGroup = sem2.subjects.filter(s => s.code !== "BH1442");
+
+      // Swap the groups, but keep Math-I in Sem 1 and Math-II in Sem 2
+      sem1.subjects = [...sem2ChemistryGroup];
+      if (math1) sem1.subjects.push(math1);
+      // Sort to make it look neat (optional, but good for UX)
+      sem1.subjects.sort((a, b) => a.name.localeCompare(b.name));
+
+      sem2.subjects = [...sem1PhysicsGroup];
+      if (math2) sem2.subjects.push(math2);
+      sem2.subjects.sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }
+  
+  return data;
+};
 
 export const gradingScale1to2: Record<string, number> = {
   "O": 10,

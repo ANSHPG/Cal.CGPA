@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Search, User as UserIcon, Save, Download, Trash2, CheckCircle, BadgeCheck, Users, GraduationCap, Archive } from "lucide-react";
 import Link from "next/link";
-import { semestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
+import { getSemestersData, gradingScale1to2, gradingScale3to6, gradeDisplayLabels } from "@/lib/data";
 import { SemesterDropdown } from "@/components/SemesterDropdown";
 import { GradeDropdown } from "@/components/GradeDropdown";
 
@@ -20,6 +20,7 @@ interface Student {
   displayName: string;
   regNo: string;
   branch?: string;
+  cycle?: number;
   role?: "student" | "admin";
   verified?: boolean;
 }
@@ -42,7 +43,7 @@ export default function AdminPage() {
   const [isEditingCredentials, setIsEditingCredentials] = useState(false);
   const [isSavingCredentials, setIsSavingCredentials] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
-  const [editCreds, setEditCreds] = useState({ displayName: "", regNo: "", email: "", branch: "" });
+  const [editCreds, setEditCreds] = useState({ displayName: "", regNo: "", email: "", branch: "", cycle: 1 });
 
   useEffect(() => {
     if (!loading) {
@@ -115,7 +116,8 @@ export default function AdminPage() {
       displayName: student.displayName || "",
       regNo: student.regNo || "",
       email: student.email || "",
-      branch: student.branch || "Electrical Engineering"
+      branch: student.branch || "Electrical Engineering",
+      cycle: student.cycle || 1
     });
     setStudentGrades(null);
     setCurrentSemesterId(1);
@@ -223,8 +225,9 @@ export default function AdminPage() {
     }
   };
 
-  const calculateSgpa = (grades: any, semId: number) => {
+  const calculateSgpa = (grades: any, semId: number, cycle: number = 1) => {
     if (!grades) return "0.00";
+    const semestersData = getSemestersData(cycle);
     const sem = semestersData.find(s => s.id === semId);
     if (!sem) return "0.00";
     const scale = sem.isOldScheme ? gradingScale1to2 : (sem.id <= 2 ? gradingScale1to2 : gradingScale3to6);
@@ -246,10 +249,11 @@ export default function AdminPage() {
   };
 
   // Utility to calculate CGPA for a student to show in the UI
-  const calculateCgpa = (grades: any) => {
+  const calculateCgpa = (grades: any, cycle: number = 1) => {
     if (!grades) return "0.00";
     let totalPoints = 0;
     let totalCredits = 0;
+    const semestersData = getSemestersData(cycle);
 
     semestersData.forEach((sem) => {
       const scale = sem.isOldScheme ? gradingScale1to2 : (sem.id <= 2 ? gradingScale1to2 : gradingScale3to6);
@@ -280,6 +284,9 @@ export default function AdminPage() {
       })
       .map(Number);
     
+    const cycle = selectedStudent.cycle || 1;
+    const semestersData = getSemestersData(cycle);
+
     let year = "1st Year";
     if (filledSemesters.length > 0) {
       const maxBaseSem = Math.max(...filledSemesters.map(id => {
@@ -293,10 +300,10 @@ export default function AdminPage() {
 
     const sgpaData: Record<number, number> = {};
     semestersData.forEach(sem => {
-      sgpaData[sem.id] = Number(calculateSgpa(grades, sem.id));
+      sgpaData[sem.id] = Number(calculateSgpa(grades, sem.id, cycle));
     });
 
-    const cgpa = Number(calculateCgpa(grades));
+    const cgpa = Number(calculateCgpa(grades, cycle));
 
     try {
       const response = await fetch("/api/download-excel", {
@@ -307,7 +314,8 @@ export default function AdminPage() {
             name: selectedStudent.displayName || "Unknown", 
             rollNo: selectedStudent.regNo || "", 
             branch: selectedStudent.branch || "Electrical Engineering", 
-            year 
+            year,
+            cycle
           },
           grades,
           sgpaData,
@@ -353,6 +361,9 @@ export default function AdminPage() {
           })
           .map(Number);
         
+        const cycle = student.cycle || 1;
+        const semestersData = getSemestersData(cycle);
+
         let year = "1st Year";
         if (filledSemesters.length > 0) {
           const maxBaseSem = Math.max(...filledSemesters.map(id => {
@@ -366,10 +377,10 @@ export default function AdminPage() {
 
         const sgpaData: Record<number, number> = {};
         semestersData.forEach(sem => {
-          sgpaData[sem.id] = Number(calculateSgpa(grades, sem.id));
+          sgpaData[sem.id] = Number(calculateSgpa(grades, sem.id, cycle));
         });
 
-        const cgpa = Number(calculateCgpa(grades));
+        const cgpa = Number(calculateCgpa(grades, cycle));
 
         const response = await fetch("/api/download-excel", {
           method: "POST",
@@ -379,7 +390,8 @@ export default function AdminPage() {
               name: student.displayName || "Unknown", 
               rollNo: student.regNo || "", 
               branch: student.branch || "Electrical Engineering", 
-              year 
+              year,
+              cycle
             },
             grades,
             sgpaData,
@@ -634,6 +646,17 @@ export default function AdminPage() {
                             <option value="Electrical Engineering">Electrical Engineering</option>
                           </select>
                         </div>
+                        <div>
+                          <label className="text-xs text-muted">First-Year Cycle</label>
+                          <select 
+                            value={editCreds.cycle} 
+                            onChange={e => setEditCreds({...editCreds, cycle: Number(e.target.value)})}
+                            className="w-full h-8 text-sm border border-hairline bg-surface-card rounded px-2 text-ink focus:outline-none"
+                          >
+                            <option value="1">Cycle 1 (Physics in Sem 1)</option>
+                            <option value="2">Cycle 2 (Chemistry in Sem 1)</option>
+                          </select>
+                        </div>
                         <div className="flex gap-2 pt-2">
                           <Button 
                             onClick={handleSaveCredentials} 
@@ -659,7 +682,7 @@ export default function AdminPage() {
                     <div className="text-left sm:text-right flex flex-col sm:items-end w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t border-hairline sm:border-0">
                       <div className="text-xs uppercase tracking-wider text-muted font-semibold">Current CGPA</div>
                       <div className="text-3xl font-bold text-primary title-display mb-2">
-                        {calculateCgpa(studentGrades.grades)}
+                        {calculateCgpa(studentGrades.grades, selectedStudent.cycle || 1)}
                       </div>
                       {isEditing ? (
                         <Button 
@@ -705,19 +728,20 @@ export default function AdminPage() {
                       <div className="flex items-baseline gap-4 w-full sm:w-auto">
                         <h3 className="text-xl font-medium title-display text-ink">Semester Grades</h3>
                         <div className="text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
-                          SGPA: {calculateSgpa(studentGrades.grades, currentSemesterId)}
+                          SGPA: {calculateSgpa(studentGrades.grades, currentSemesterId, selectedStudent.cycle || 1)}
                         </div>
                       </div>
                       <div className="w-full sm:w-[320px]">
                         <SemesterDropdown
                           value={currentSemesterId}
                           onChange={(val) => setCurrentSemesterId(val)}
+                          cycle={selectedStudent.cycle || 1}
                         />
                       </div>
                     </div>
 
                     <div className="divide-y divide-hairline border border-hairline rounded-lg bg-surface-card">
-                      {semestersData.find(s => s.id === currentSemesterId)?.subjects.map((sub) => {
+                      {getSemestersData(selectedStudent.cycle || 1).find(s => s.id === currentSemesterId)?.subjects.map((sub) => {
                         const gradesObj = studentGrades.grades?.[currentSemesterId] || {};
                         const grade = gradesObj[sub.code] || "";
                         const isBackCleared = grade && grade.endsWith("_BACK");
@@ -744,6 +768,7 @@ export default function AdminPage() {
                                   value={grade}
                                   onChange={(val) => handleGradeChange(currentSemesterId, sub.code, val)}
                                   semesterId={currentSemesterId}
+                                  cycle={selectedStudent.cycle || 1}
                                 />
                               ) : grade ? (
                                 <div className="font-bold text-lg text-ink bg-surface-soft px-4 py-1 rounded-md border border-hairline min-w-[60px] text-center">

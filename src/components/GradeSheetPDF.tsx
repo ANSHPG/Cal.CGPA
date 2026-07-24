@@ -1,6 +1,6 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
-import { semestersData, gradingScale1to2, gradingScale3to6 } from "@/lib/data";
+import { getSemestersData, gradingScale1to2, gradingScale3to6 } from "@/lib/data";
 
 Font.register({
   family: "Helvetica",
@@ -10,7 +10,7 @@ Font.register({
 });
 
 interface GradeSheetPDFProps {
-  studentDetails: { name: string; rollNo: string; branch: string; year: string };
+  studentDetails: { name: string; rollNo: string; branch: string; year: string; cycle?: number };
   grades: Record<number, Record<string, string>>;
   sgpaData: Record<number, number>;
   cgpa: number;
@@ -170,6 +170,8 @@ export const GradeSheetPDF: React.FC<GradeSheetPDFProps> = ({
       textAlign: "center",
     },
   });
+
+  const semestersData = getSemestersData(studentDetails.cycle || 1);
 
   const filledSemesters = semestersData
     .filter((sem) => {

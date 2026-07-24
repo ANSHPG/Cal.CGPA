@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check } from "lucide-react";
-import { gradeDisplayLabels, gradingScale3to6, semestersData } from "@/lib/data";
+import { gradeDisplayLabels, gradingScale3to6, getSemestersData } from "@/lib/data";
 
 interface GradeDropdownProps {
   value: string;
   onChange: (value: string) => void;
   semesterId: number;
+  cycle?: number;
 }
 
 const getOptionStyle = (g: string) => {
@@ -33,7 +34,7 @@ const oldScheme = ["O", "E", "A", "B", "C", "D", "F", "SA", "M"];
 const oldSchemeBack = ["O_BACK", "A_BACK", "B_BACK", "C_BACK", "D_BACK", "P_BACK", "F_BACK", "SA_BACK", "M_BACK"];
 const newScheme = ["O", "A", "B", "C", "D", "P", "F", "SA", "M"];
 
-export function GradeDropdown({ value, onChange, semesterId }: GradeDropdownProps) {
+export function GradeDropdown({ value, onChange, semesterId, cycle = 1 }: GradeDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +53,7 @@ export function GradeDropdown({ value, onChange, semesterId }: GradeDropdownProp
     setIsOpen(false);
   };
 
+  const semestersData = React.useMemo(() => getSemestersData(cycle), [cycle]);
   const currentSem = semestersData.find((s) => s.id === semesterId);
   const isOldSchemeSem = currentSem?.isOldScheme || semesterId <= 2;
 

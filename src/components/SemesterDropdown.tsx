@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check, GraduationCap } from "lucide-react";
-import { semestersData } from "@/lib/data";
+import { getSemestersData } from "@/lib/data";
 
 interface SemesterDropdownProps {
   value: number;
   onChange: (value: number) => void;
+  cycle?: number;
 }
 
-export function SemesterDropdown({ value, onChange }: SemesterDropdownProps) {
+export function SemesterDropdown({ value, onChange, cycle = 1 }: SemesterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -25,6 +26,8 @@ export function SemesterDropdown({ value, onChange }: SemesterDropdownProps) {
     onChange(id);
     setIsOpen(false);
   };
+
+  const semestersData = React.useMemo(() => getSemestersData(cycle), [cycle]);
 
   const selectedSem = semestersData.find((s) => s.id === value);
 
